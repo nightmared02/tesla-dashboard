@@ -10,6 +10,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from flask_wtf.csrf import CSRFProtect
 
+# Force rebuild - 2025-06-26 00:15:00
 app = Flask(__name__)
 
 # Database configuration
