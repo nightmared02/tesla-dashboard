@@ -583,14 +583,20 @@
         }
 
         function updateLatestData() {
+            console.log('Fetching latest data...');
             fetch('/api/data/latest')
                 .then(response => {
                     console.log('API Response status:', response.status);
+                    console.log('API Response headers:', response.headers);
                     return response.json();
                 })
                 .then(data => {
                     console.log('API Response data:', data);
+                    console.log('Data type:', typeof data);
+                    console.log('Data keys:', Object.keys(data));
+                    
                     if (data && data.battery_level !== undefined) {
+                        console.log('Updating widgets with data...');
                         // Update status cards
                         document.getElementById('batteryLevel').textContent = `${data.battery_level}%`;
                         document.getElementById('batteryStatus').textContent = data.charging_state || 'Not charging';
@@ -646,7 +652,10 @@
                         // Update location string
                         document.getElementById('locationString').textContent = data.location || 'Location unavailable';
                         document.getElementById('lastUpdate').textContent = `Last updated: ${new Date(data.timestamp).toLocaleString()}`;
+                        
+                        console.log('Widgets updated successfully');
                     } else if (data.message) {
+                        console.log('No data available message:', data.message);
                         // Handle no data available message
                         document.getElementById('batteryLevel').textContent = '--';
                         document.getElementById('batteryStatus').textContent = 'No data';
@@ -674,6 +683,8 @@
                         document.getElementById('chargeCount').textContent = '--';
                         document.getElementById('idleCount').textContent = '--';
                         document.getElementById('sleepCount').textContent = '--';
+                    } else {
+                        console.log('Unexpected data format:', data);
                     }
                 })
                 .catch(error => {
@@ -714,6 +725,7 @@
         }
 
         function updateCharts() {
+            console.log('Updating charts...');
             const params = new URLSearchParams();
             if (dateRange) {
                 params.append('start_date', dateRange.start);
@@ -722,12 +734,18 @@
 
             // Update each chart
             ['battery', 'temperature', 'tire_pressure', 'charging', 'usage_stats'].forEach(chartType => {
+                console.log(`Fetching ${chartType} chart data...`);
                 fetch(`/api/charts/${chartType}?${params.toString()}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        console.log(`${chartType} chart response status:`, response.status);
+                        return response.json();
+                    })
                     .then(data => {
+                        console.log(`${chartType} chart data:`, data);
                         if (data.success) {
                             const chart = getChartByType(chartType);
                             if (chart) {
+                                console.log(`Updating ${chartType} chart...`);
                                 if (chartType === 'usage_stats') {
                                     // Handle usage stats chart (pie chart)
                                     chart.data.labels = data.data.labels;
@@ -755,7 +773,12 @@
                                     chart.data.datasets[0].data = data.data.values;
                                     chart.update('none');
                                 }
+                                console.log(`${chartType} chart updated successfully`);
+                            } else {
+                                console.error(`Chart not found for type: ${chartType}`);
                             }
+                        } else {
+                            console.error(`${chartType} chart data not successful:`, data);
                         }
                     })
                     .catch(error => {
