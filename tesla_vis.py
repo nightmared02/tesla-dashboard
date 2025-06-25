@@ -272,6 +272,68 @@ def tire_pressure_chart():
     
     return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
 
+@app.route('/api/charts/usage_stats')
+def usage_stats_chart():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    # Default to last 7 days if no dates provided
+    if not start_date or not end_date:
+        since = datetime.now(timezone.utc) - timedelta(days=7)
+        data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
+    else:
+        # Parse date strings and filter by date range
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        data = TeslaData.query.filter(
+            TeslaData.timestamp >= start_dt,
+            TeslaData.timestamp < end_dt
+        ).order_by(TeslaData.timestamp).all()
+    
+    if not data:
+        return jsonify({'success': True, 'data': {'labels': [], 'datasets': []}})
+    
+    # Get the latest data point for the selected period
+    latest_data = data[-1] if data else None
+    
+    if latest_data:
+        # Calculate totals for the period
+        drive_total = latest_data.drive_number or 0
+        charge_total = latest_data.charge_number or 0
+        idle_total = latest_data.idle_number or 0
+        sleep_total = latest_data.sleep_number or 0
+        
+        # Calculate percentages
+        total = drive_total + charge_total + idle_total + sleep_total
+        if total > 0:
+            drive_pct = (drive_total / total) * 100
+            charge_pct = (charge_total / total) * 100
+            idle_pct = (idle_total / total) * 100
+            sleep_pct = (sleep_total / total) * 100
+        else:
+            drive_pct = charge_pct = idle_pct = sleep_pct = 0
+        
+        return jsonify({
+            'success': True, 
+            'data': {
+                'labels': ['Drive', 'Charge', 'Idle', 'Sleep'],
+                'datasets': [{
+                    'data': [drive_pct, charge_pct, idle_pct, sleep_pct],
+                    'backgroundColor': ['#3B82F6', '#10B981', '#F59E0B', '#6B7280'],
+                    'borderColor': ['#2563EB', '#059669', '#D97706', '#4B5563'],
+                    'borderWidth': 2
+                }],
+                'totals': {
+                    'drive': drive_total,
+                    'charge': charge_total,
+                    'idle': idle_total,
+                    'sleep': sleep_total
+                }
+            }
+        })
+    
+    return jsonify({'success': True, 'data': {'labels': [], 'datasets': []}})
+
 @app.route('/api/test')
 def test_system():
     """Test endpoint to check system status and manually trigger data ingestion"""

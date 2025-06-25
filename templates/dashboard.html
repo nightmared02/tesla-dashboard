@@ -219,6 +219,41 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Usage Statistics Card -->
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Usage Statistics</p>
+                        <p class="text-lg font-bold text-gray-900" id="usageStatsTitle">Period Summary</p>
+                    </div>
+                    <div class="w-12 h-12 bg-tesla-red rounded-full flex items-center justify-center">
+                        <!-- Heroicons: Chart Pie -->
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13h6a3 3 0 002.76-1.84l.64-1.28a3 3 0 00.64-1.28A3 3 0 0015 6H3m0 7h6a3 3 0 002.76-1.84l.64-1.28a3 3 0 00.64-1.28A3 3 0 0015 0H3m0 7h6a3 3 0 002.76-1.84l.64-1.28a3 3 0 00.64-1.28A3 3 0 0015 0H3"/></svg>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-blue-600" id="driveCount">--</p>
+                        <p class="text-xs text-gray-500">Drive Sessions</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-green-600" id="chargeCount">--</p>
+                        <p class="text-xs text-gray-500">Charge Sessions</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-yellow-600" id="idleCount">--</p>
+                        <p class="text-xs text-gray-500">Idle Sessions</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-gray-600" id="sleepCount">--</p>
+                        <p class="text-xs text-gray-500">Sleep Sessions</p>
+                    </div>
+                </div>
+                <div class="h-32">
+                    <canvas id="usageStatsChart"></canvas>
+                </div>
+            </div>
         </div>
 
         <!-- Location and Controls -->
@@ -330,11 +365,12 @@
         };
 
         // Initialize charts
-        let batteryChart, temperatureChart, tirePressureChart, chargingChart;
-        let autoRefreshInterval;
+        let batteryChart, temperatureChart, tirePressureChart, chargingChart, usageStatsChart;
+        let autoRefreshInterval, chartRefreshInterval;
+        let dateRange = null;
+        
         const DATA_REFRESH_INTERVAL = 60000; // 1 minute
         const CHART_REFRESH_INTERVAL = 60000; // 1 minute
-        let dateRange = null;
 
         // Initialize date picker
         flatpickr("#dateRange", {
@@ -468,6 +504,37 @@
                 },
                 options: chartOptions
             });
+
+            // Usage Stats Chart
+            const usageStatsCtx = document.getElementById('usageStatsChart').getContext('2d');
+            usageStatsChart = new Chart(usageStatsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Drive', 'Charge', 'Idle', 'Sleep'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#6B7280'],
+                        borderColor: ['#2563EB', '#059669', '#D97706', '#4B5563'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         function updateLatestData() {
@@ -554,6 +621,10 @@
                         document.getElementById('chargingDetailsStatus').textContent = 'No data';
                         document.getElementById('location').textContent = '--';
                         document.getElementById('locationStatus').textContent = 'No data';
+                        document.getElementById('driveCount').textContent = '--';
+                        document.getElementById('chargeCount').textContent = '--';
+                        document.getElementById('idleCount').textContent = '--';
+                        document.getElementById('sleepCount').textContent = '--';
                     }
                 })
                 .catch(error => {
@@ -581,6 +652,10 @@
                     document.getElementById('chargingDetailsStatus').textContent = 'Connection failed';
                     document.getElementById('location').textContent = 'Error';
                     document.getElementById('locationStatus').textContent = 'Connection failed';
+                    document.getElementById('driveCount').textContent = '--';
+                    document.getElementById('chargeCount').textContent = '--';
+                    document.getElementById('idleCount').textContent = '--';
+                    document.getElementById('sleepCount').textContent = '--';
                 });
         }
 
@@ -592,16 +667,32 @@
             }
 
             // Update each chart
-            ['battery', 'temperature', 'tire_pressure', 'charging'].forEach(chartType => {
+            ['battery', 'temperature', 'tire_pressure', 'charging', 'usage_stats'].forEach(chartType => {
                 fetch(`/api/charts/${chartType}?${params.toString()}`)
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
                             const chart = getChartByType(chartType);
                             if (chart) {
-                                chart.data.labels = data.data.labels;
-                                chart.data.datasets[0].data = data.data.values;
-                                chart.update('none');
+                                if (chartType === 'usage_stats') {
+                                    // Handle usage stats chart (pie chart)
+                                    chart.data.labels = data.data.labels;
+                                    chart.data.datasets[0].data = data.data.datasets[0].data;
+                                    chart.update('none');
+                                    
+                                    // Update the count displays
+                                    if (data.data.totals) {
+                                        document.getElementById('driveCount').textContent = data.data.totals.drive;
+                                        document.getElementById('chargeCount').textContent = data.data.totals.charge;
+                                        document.getElementById('idleCount').textContent = data.data.totals.idle;
+                                        document.getElementById('sleepCount').textContent = data.data.totals.sleep;
+                                    }
+                                } else {
+                                    // Handle line charts
+                                    chart.data.labels = data.data.labels;
+                                    chart.data.datasets[0].data = data.data.values;
+                                    chart.update('none');
+                                }
                             }
                         }
                     })
@@ -617,6 +708,7 @@
                 case 'temperature': return temperatureChart;
                 case 'tire_pressure': return tirePressureChart;
                 case 'charging': return chargingChart;
+                case 'usage_stats': return usageStatsChart;
                 default: return null;
             }
         }
@@ -671,4 +763,4 @@
         });
     </script>
 </body>
-</html> 
+</html>
