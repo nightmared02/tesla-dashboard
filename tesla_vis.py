@@ -440,6 +440,101 @@ def manual_ingest():
             "timestamp": datetime.now().isoformat()
         }), 500
 
+@app.route('/api/add-test-data', methods=['GET'])
+def add_test_data():
+    """Add some test data for demonstration"""
+    try:
+        # Check if we already have data
+        existing_count = TeslaData.query.count()
+        if existing_count > 0:
+            return jsonify({
+                "success": True,
+                "message": f"Database already has {existing_count} records",
+                "timestamp": datetime.now().isoformat()
+            })
+        
+        # Create test data
+        test_data = TeslaData(
+            data_id=999999,
+            date="2025-06-25",
+            state="online",
+            battery_level=85.5,
+            battery_range=280.0,
+            ideal_battery_range=300.0,
+            est_battery_range=275.0,
+            usable_battery_level=85.0,
+            charge_limit_soc=90.0,
+            charging_state="Disconnected",
+            charge_rate=0.0,
+            charger_power=0.0,
+            charger_voltage=0.0,
+            charger_actual_current=0.0,
+            time_to_full_charge=0.0,
+            charge_energy_added=0.0,
+            charge_miles_added_rated=0.0,
+            inside_temp=22.0,
+            outside_temp=25.0,
+            driver_temp_setting=21.0,
+            passenger_temp_setting=21.0,
+            is_climate_on=False,
+            is_preconditioning=False,
+            latitude=40.7128,
+            longitude=-74.0060,
+            speed=0.0,
+            heading=0.0,
+            odometer=15000.0,
+            shift_state="P",
+            locked=True,
+            sentry_mode=False,
+            valet_mode=False,
+            car_version="2024.20.1",
+            tpms_front_left=42.0,
+            tpms_front_right=42.0,
+            tpms_rear_left=40.0,
+            tpms_rear_right=40.0,
+            location="New York, NY",
+            car_state="online",
+            max_range=350.0,
+            sleep_number=1,
+            drive_number=1,
+            charge_number=1,
+            idle_number=1
+        )
+        
+        db.session.add(test_data)
+        db.session.commit()
+        
+        return jsonify({
+            "success": True,
+            "message": "Test data added successfully",
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
+
+@app.route('/api/init-db', methods=['GET'])
+def init_database():
+    """Initialize database tables manually"""
+    try:
+        with app.app_context():
+            db.create_all()
+            return jsonify({
+                "success": True,
+                "message": "Database tables created successfully",
+                "timestamp": datetime.now().isoformat()
+            })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
+
 def safe_float(value):
     """Safely convert value to float, return None if not possible"""
     if value is None or value == '' or value == 'null':
