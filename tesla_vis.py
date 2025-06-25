@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 import json
 import requests
 from sqlalchemy import desc, text
+import pytz
 
 app = Flask(__name__)
 
@@ -178,7 +179,9 @@ def battery_chart():
     if not data:
         return jsonify({'success': True, 'data': {'labels': [], 'values': []}})
     
-    labels = [d.timestamp.strftime('%Y-%m-%d %H:%M') for d in data]
+    # Convert UTC timestamps to Europe/Sofia timezone
+    sofia_tz = pytz.timezone('Europe/Sofia')
+    labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
     values = [d.battery_level for d in data]
     
     return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
@@ -204,7 +207,9 @@ def temperature_chart():
     if not data:
         return jsonify({'success': True, 'data': {'labels': [], 'values': []}})
     
-    labels = [d.timestamp.strftime('%Y-%m-%d %H:%M') for d in data]
+    # Convert UTC timestamps to Europe/Sofia timezone
+    sofia_tz = pytz.timezone('Europe/Sofia')
+    labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
     values = [d.outside_temp_c for d in data]
     
     return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
@@ -230,7 +235,9 @@ def charging_chart():
     if not data:
         return jsonify({'success': True, 'data': {'labels': [], 'values': []}})
     
-    labels = [d.timestamp.strftime('%Y-%m-%d %H:%M') for d in data]
+    # Convert UTC timestamps to Europe/Sofia timezone
+    sofia_tz = pytz.timezone('Europe/Sofia')
+    labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
     values = [d.charge_rate for d in data]
     
     return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
@@ -256,7 +263,9 @@ def tire_pressure_chart():
     if not data:
         return jsonify({'success': True, 'data': {'labels': [], 'values': []}})
     
-    labels = [d.timestamp.strftime('%Y-%m-%d %H:%M') for d in data]
+    # Convert UTC timestamps to Europe/Sofia timezone
+    sofia_tz = pytz.timezone('Europe/Sofia')
+    labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
     values = [d.tpms_front_left_bar for d in data]
     
     return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})

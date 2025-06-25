@@ -382,10 +382,10 @@
                         document.getElementById('temperature').textContent = `${data.outside_temp_c}°C`;
                         document.getElementById('tempStatus').textContent = 'Outside temperature';
                         
-                        document.getElementById('tirePressure').textContent = `${data.tpms_front_left_bar} bar`;
+                        document.getElementById('tirePressure').textContent = `${data.tpms_front_left_bar.toFixed(1)} bar`;
                         document.getElementById('tireStatus').textContent = 'Front left tire';
                         
-                        document.getElementById('odometer').textContent = `${data.odometer_km} km`;
+                        document.getElementById('odometer').textContent = `${data.odometer_km.toFixed(1)} km`;
                         document.getElementById('odoStatus').textContent = 'Total distance';
                         
                         // Update location
