@@ -374,29 +374,50 @@
             fetch('/api/data/latest')
                 .then(response => response.json())
                 .then(data => {
-                    if (data.success && data.data) {
-                        const vehicle = data.data;
-                        
+                    if (data && data.battery_level !== undefined) {
                         // Update status cards
-                        document.getElementById('batteryLevel').textContent = `${vehicle.battery_level}%`;
-                        document.getElementById('batteryStatus').textContent = vehicle.charging_state || 'Not charging';
+                        document.getElementById('batteryLevel').textContent = `${data.battery_level}%`;
+                        document.getElementById('batteryStatus').textContent = data.charging_state || 'Not charging';
                         
-                        document.getElementById('temperature').textContent = `${vehicle.outside_temp}°C`;
+                        document.getElementById('temperature').textContent = `${data.outside_temp_c}°C`;
                         document.getElementById('tempStatus').textContent = 'Outside temperature';
                         
-                        document.getElementById('tirePressure').textContent = `${vehicle.tire_pressure_fl} bar`;
+                        document.getElementById('tirePressure').textContent = `${data.tpms_front_left_bar} bar`;
                         document.getElementById('tireStatus').textContent = 'Front left tire';
                         
-                        document.getElementById('odometer').textContent = `${vehicle.odometer} km`;
+                        document.getElementById('odometer').textContent = `${data.odometer_km} km`;
                         document.getElementById('odoStatus').textContent = 'Total distance';
                         
                         // Update location
-                        document.getElementById('location').textContent = vehicle.address || 'Location unavailable';
-                        document.getElementById('lastUpdate').textContent = `Last updated: ${new Date(vehicle.timestamp).toLocaleString()}`;
+                        document.getElementById('location').textContent = data.location || 'Location unavailable';
+                        document.getElementById('lastUpdate').textContent = `Last updated: ${new Date(data.timestamp).toLocaleString()}`;
+                    } else if (data.message) {
+                        // Handle no data available message
+                        document.getElementById('batteryLevel').textContent = '--';
+                        document.getElementById('batteryStatus').textContent = 'No data';
+                        document.getElementById('temperature').textContent = '--';
+                        document.getElementById('tempStatus').textContent = 'No data';
+                        document.getElementById('tirePressure').textContent = '--';
+                        document.getElementById('tireStatus').textContent = 'No data';
+                        document.getElementById('odometer').textContent = '--';
+                        document.getElementById('odoStatus').textContent = 'No data';
+                        document.getElementById('location').textContent = 'No data available';
+                        document.getElementById('lastUpdate').textContent = 'No data available';
                     }
                 })
                 .catch(error => {
                     console.error('Error fetching latest data:', error);
+                    // Show error state
+                    document.getElementById('batteryLevel').textContent = 'Error';
+                    document.getElementById('batteryStatus').textContent = 'Connection failed';
+                    document.getElementById('temperature').textContent = 'Error';
+                    document.getElementById('tempStatus').textContent = 'Connection failed';
+                    document.getElementById('tirePressure').textContent = 'Error';
+                    document.getElementById('tireStatus').textContent = 'Connection failed';
+                    document.getElementById('odometer').textContent = 'Error';
+                    document.getElementById('odoStatus').textContent = 'Connection failed';
+                    document.getElementById('location').textContent = 'Connection error';
+                    document.getElementById('lastUpdate').textContent = 'Connection failed';
                 });
         }
 

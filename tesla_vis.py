@@ -5,8 +5,6 @@ from datetime import datetime, timedelta, timezone
 import json
 import requests
 from sqlalchemy import desc, text
-import plotly.graph_objs as go
-import plotly.utils
 
 app = Flask(__name__)
 
@@ -178,25 +176,12 @@ def battery_chart():
         ).order_by(TeslaData.timestamp).all()
     
     if not data:
-        return jsonify({'data': [], 'layout': {'title': 'No battery data available for selected period'}})
+        return jsonify({'success': True, 'data': {'labels': [], 'values': []}})
     
-    timestamps = [d.timestamp.strftime('%Y-%m-%d %H:%M') for d in data]
-    battery_levels = [d.battery_level for d in data]
-    battery_ranges = [d.battery_range_km for d in data]
+    labels = [d.timestamp.strftime('%Y-%m-%d %H:%M') for d in data]
+    values = [d.battery_level for d in data]
     
-    trace1 = go.Scatter(x=timestamps, y=battery_levels, mode='lines+markers', name='Battery Level (%)', line=dict(color='#1f77b4'))
-    trace2 = go.Scatter(x=timestamps, y=battery_ranges, mode='lines+markers', name='Range (km)', yaxis='y2', line=dict(color='#ff7f0e'))
-    
-    layout = go.Layout(
-        title='Battery Level and Range Over Time',
-        xaxis=dict(title='Time'),
-        yaxis=dict(title='Battery Level (%)', side='left'),
-        yaxis2=dict(title='Range (km)', side='right', overlaying='y'),
-        hovermode='x unified',
-        showlegend=True
-    )
-    
-    return jsonify({'data': [trace1, trace2], 'layout': layout})
+    return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
 
 @app.route('/api/charts/temperature')
 def temperature_chart():
@@ -217,24 +202,12 @@ def temperature_chart():
         ).order_by(TeslaData.timestamp).all()
     
     if not data:
-        return jsonify({'data': [], 'layout': {'title': 'No temperature data available for selected period'}})
+        return jsonify({'success': True, 'data': {'labels': [], 'values': []}})
     
-    timestamps = [d.timestamp.strftime('%Y-%m-%d %H:%M') for d in data]
-    inside_temps = [d.inside_temp_c for d in data]
-    outside_temps = [d.outside_temp_c for d in data]
+    labels = [d.timestamp.strftime('%Y-%m-%d %H:%M') for d in data]
+    values = [d.outside_temp_c for d in data]
     
-    trace1 = go.Scatter(x=timestamps, y=inside_temps, mode='lines+markers', name='Inside Temperature (°C)', line=dict(color='#d62728'))
-    trace2 = go.Scatter(x=timestamps, y=outside_temps, mode='lines+markers', name='Outside Temperature (°C)', line=dict(color='#2ca02c'))
-    
-    layout = go.Layout(
-        title='Temperature Over Time',
-        xaxis=dict(title='Time'),
-        yaxis=dict(title='Temperature (°C)'),
-        hovermode='x unified',
-        showlegend=True
-    )
-    
-    return jsonify({'data': [trace1, trace2], 'layout': layout})
+    return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
 
 @app.route('/api/charts/charging')
 def charging_chart():
@@ -255,25 +228,12 @@ def charging_chart():
         ).order_by(TeslaData.timestamp).all()
     
     if not data:
-        return jsonify({'data': [], 'layout': {'title': 'No charging data available for selected period'}})
+        return jsonify({'success': True, 'data': {'labels': [], 'values': []}})
     
-    timestamps = [d.timestamp.strftime('%Y-%m-%d %H:%M') for d in data]
-    charge_rates = [d.charge_rate for d in data]
-    charge_energy = [d.charge_energy_added for d in data]
+    labels = [d.timestamp.strftime('%Y-%m-%d %H:%M') for d in data]
+    values = [d.charge_rate for d in data]
     
-    trace1 = go.Scatter(x=timestamps, y=charge_rates, mode='lines+markers', name='Charge Rate (kW)', line=dict(color='#9467bd'))
-    trace2 = go.Scatter(x=timestamps, y=charge_energy, mode='lines+markers', name='Energy Added (kWh)', yaxis='y2', line=dict(color='#8c564b'))
-    
-    layout = go.Layout(
-        title='Charging Data Over Time',
-        xaxis=dict(title='Time'),
-        yaxis=dict(title='Charge Rate (kW)', side='left'),
-        yaxis2=dict(title='Energy Added (kWh)', side='right', overlaying='y'),
-        hovermode='x unified',
-        showlegend=True
-    )
-    
-    return jsonify({'data': [trace1, trace2], 'layout': layout})
+    return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
 
 @app.route('/api/charts/tire_pressure')
 def tire_pressure_chart():
@@ -294,28 +254,12 @@ def tire_pressure_chart():
         ).order_by(TeslaData.timestamp).all()
     
     if not data:
-        return jsonify({'data': [], 'layout': {'title': 'No tire pressure data available for selected period'}})
+        return jsonify({'success': True, 'data': {'labels': [], 'values': []}})
     
-    timestamps = [d.timestamp.strftime('%Y-%m-%d %H:%M') for d in data]
-    front_left = [d.tpms_front_left_bar for d in data]
-    front_right = [d.tpms_front_right_bar for d in data]
-    rear_left = [d.tpms_rear_left_bar for d in data]
-    rear_right = [d.tpms_rear_right_bar for d in data]
+    labels = [d.timestamp.strftime('%Y-%m-%d %H:%M') for d in data]
+    values = [d.tpms_front_left_bar for d in data]
     
-    trace1 = go.Scatter(x=timestamps, y=front_left, mode='lines+markers', name='Front Left (bar)', line=dict(color='#e377c2'))
-    trace2 = go.Scatter(x=timestamps, y=front_right, mode='lines+markers', name='Front Right (bar)', line=dict(color='#7f7f7f'))
-    trace3 = go.Scatter(x=timestamps, y=rear_left, mode='lines+markers', name='Rear Left (bar)', line=dict(color='#bcbd22'))
-    trace4 = go.Scatter(x=timestamps, y=rear_right, mode='lines+markers', name='Rear Right (bar)', line=dict(color='#17becf'))
-    
-    layout = go.Layout(
-        title='Tire Pressure Over Time',
-        xaxis=dict(title='Time'),
-        yaxis=dict(title='Pressure (bar)'),
-        hovermode='x unified',
-        showlegend=True
-    )
-    
-    return jsonify({'data': [trace1, trace2, trace3, trace4], 'layout': layout})
+    return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
 
 @app.route('/api/test')
 def test_system():
