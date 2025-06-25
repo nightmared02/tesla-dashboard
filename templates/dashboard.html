@@ -3,383 +3,508 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla Data Dashboard</title>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>Tesla Dashboard - EVO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .dashboard-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .chart-container {
-            background: white;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .latest-data {
-            background: white;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .data-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
-        .data-item {
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 4px;
-            transition: all 0.3s ease;
-        }
-        .data-item.updated {
-            background: #e8f5e8;
-            transform: scale(1.02);
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 30px;
-        }
-        .label {
-            font-weight: bold;
-            color: #666;
-        }
-        .value {
-            color: #333;
-            font-size: 1.2em;
-        }
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-        .status-live {
-            background-color: #28a745;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-        .last-update {
-            text-align: right;
-            color: #666;
-            font-size: 0.9em;
-            margin-top: 10px;
-        }
-        .controls {
-            background: white;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .date-picker {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .date-picker input {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .refresh-btn {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s;
-        }
-        .refresh-btn:hover {
-            background: #0056b3;
-        }
-        .refresh-btn:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-        }
-        .auto-refresh-toggle {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 24px;
-        }
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 24px;
-        }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        input:checked + .slider {
-            background-color: #2196F3;
-        }
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
+        .bg-tesla-red { background-color: #cc0000; }
+        .bg-tesla-dark { background-color: #212121; }
+        .bg-tesla-gray { background-color: #818181; }
+        .bg-tesla-light { background-color: #f2f2f2; }
+        .bg-tesla-white { background-color: #fafafa; }
+        .text-tesla-red { color: #cc0000; }
+        .text-tesla-dark { color: #212121; }
+        .text-tesla-gray { color: #818181; }
+        .border-tesla-red { border-color: #cc0000; }
+        .border-tesla-dark { border-color: #212121; }
+        .border-tesla-gray { border-color: #818181; }
+        .hover\:bg-tesla-red:hover { background-color: #cc0000; }
+        .hover\:bg-tesla-dark:hover { background-color: #212121; }
+        .hover\:text-tesla-red:hover { color: #cc0000; }
+        .focus\:ring-tesla-red:focus { --tw-ring-color: #cc0000; }
+        .focus\:border-tesla-red:focus { border-color: #cc0000; }
     </style>
 </head>
-<body>
-    <div class="dashboard-container">
-        <h1>
-            <span class="status-indicator status-live"></span>
-            Tesla Data Dashboard (Metric Units)
-        </h1>
-        
-        <div class="controls">
-            <div class="date-picker">
-                <label>Date Range:</label>
-                <input type="text" id="date-range" placeholder="Select date range">
+<body class="bg-tesla-white min-h-screen">
+    <!-- Header -->
+    <header class="bg-tesla-dark shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-2xl font-bold text-white">Tesla Dashboard</h1>
+                        <p class="text-tesla-gray text-sm">EVO - Real-time Vehicle Monitoring</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="ingestBtn" class="bg-tesla-red hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200">
+                        Fetch Latest Data
+                    </button>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-tesla-gray text-sm">Auto-refresh:</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="autoRefreshToggle" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-tesla-gray peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-tesla-red rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-tesla-red"></div>
+                        </label>
+                    </div>
+                </div>
             </div>
-            <div class="auto-refresh-toggle">
-                <label>Auto-refresh:</label>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="auto-refresh-toggle" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <button class="refresh-btn" id="refresh-data-btn">Refresh Data</button>
         </div>
-        
-        <div class="latest-data">
-            <h2>Latest Vehicle Status</h2>
-            <div class="data-grid" id="latest-data">
-                <!-- Will be populated by JavaScript -->
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Status Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Battery Status -->
+            <div class="bg-white rounded-xl shadow-lg border border-tesla-light p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-tesla-gray text-sm font-medium">Battery Level</p>
+                        <p id="batteryLevel" class="text-3xl font-bold text-tesla-dark">--</p>
+                        <p id="batteryStatus" class="text-sm text-tesla-gray">--</p>
+                    </div>
+                    <div class="w-12 h-12 bg-tesla-red rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                </div>
             </div>
-            <div class="last-update" id="last-update">
-                Last updated: <span id="update-time">Loading...</span>
+
+            <!-- Temperature -->
+            <div class="bg-white rounded-xl shadow-lg border border-tesla-light p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-tesla-gray text-sm font-medium">Temperature</p>
+                        <p id="temperature" class="text-3xl font-bold text-tesla-dark">--</p>
+                        <p id="tempStatus" class="text-sm text-tesla-gray">--</p>
+                    </div>
+                    <div class="w-12 h-12 bg-tesla-red rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tire Pressure -->
+            <div class="bg-white rounded-xl shadow-lg border border-tesla-light p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-tesla-gray text-sm font-medium">Tire Pressure</p>
+                        <p id="tirePressure" class="text-3xl font-bold text-tesla-dark">--</p>
+                        <p id="tireStatus" class="text-sm text-tesla-gray">--</p>
+                    </div>
+                    <div class="w-12 h-12 bg-tesla-red rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Odometer -->
+            <div class="bg-white rounded-xl shadow-lg border border-tesla-light p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-tesla-gray text-sm font-medium">Odometer</p>
+                        <p id="odometer" class="text-3xl font-bold text-tesla-dark">--</p>
+                        <p id="odoStatus" class="text-sm text-tesla-gray">--</p>
+                    </div>
+                    <div class="w-12 h-12 bg-tesla-red rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="chart-container">
-            <div id="battery-chart"></div>
+        <!-- Location and Controls -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Location -->
+            <div class="lg:col-span-2 bg-white rounded-xl shadow-lg border border-tesla-light p-6">
+                <h3 class="text-lg font-semibold text-tesla-dark mb-4">Vehicle Location</h3>
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-tesla-red rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p id="location" class="text-tesla-dark font-medium">Loading location...</p>
+                        <p id="lastUpdate" class="text-sm text-tesla-gray">Last updated: --</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="bg-white rounded-xl shadow-lg border border-tesla-light p-6">
+                <h3 class="text-lg font-semibold text-tesla-dark mb-4">Controls</h3>
+                <div class="space-y-3">
+                    <button id="manualRefreshBtn" class="w-full bg-tesla-light hover:bg-tesla-gray text-tesla-dark px-4 py-2 rounded-lg font-medium transition-colors duration-200">
+                        Manual Refresh
+                    </button>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-tesla-gray">Data refresh:</span>
+                        <span id="refreshStatus" class="text-sm font-medium text-tesla-red">30s</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-tesla-gray">Chart refresh:</span>
+                        <span id="chartStatus" class="text-sm font-medium text-tesla-red">60s</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="chart-container">
-            <div id="temperature-chart"></div>
+        <!-- Date Range Picker -->
+        <div class="bg-white rounded-xl shadow-lg border border-tesla-light p-6 mb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-tesla-dark mb-2">Chart Date Range</h3>
+                    <p class="text-sm text-tesla-gray">Select a date range to filter chart data</p>
+                </div>
+                <div class="mt-4 sm:mt-0">
+                    <input type="text" id="dateRange" placeholder="Select date range..." class="px-4 py-2 border border-tesla-gray rounded-lg focus:ring-2 focus:ring-tesla-red focus:border-tesla-red outline-none">
+                </div>
+            </div>
         </div>
 
-        <div class="chart-container">
-            <div id="charging-chart"></div>
-        </div>
+        <!-- Charts Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Battery Chart -->
+            <div class="bg-white rounded-xl shadow-lg border border-tesla-light p-6">
+                <h3 class="text-lg font-semibold text-tesla-dark mb-4">Battery Level Over Time</h3>
+                <div class="relative" style="height: 300px;">
+                    <canvas id="batteryChart"></canvas>
+                </div>
+            </div>
 
-        <div class="chart-container">
-            <div id="tire-pressure-chart"></div>
+            <!-- Temperature Chart -->
+            <div class="bg-white rounded-xl shadow-lg border border-tesla-light p-6">
+                <h3 class="text-lg font-semibold text-tesla-dark mb-4">Temperature Over Time</h3>
+                <div class="relative" style="height: 300px;">
+                    <canvas id="temperatureChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Tire Pressure Chart -->
+            <div class="bg-white rounded-xl shadow-lg border border-tesla-light p-6">
+                <h3 class="text-lg font-semibold text-tesla-dark mb-4">Tire Pressure Over Time</h3>
+                <div class="relative" style="height: 300px;">
+                    <canvas id="tirePressureChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Charging Chart -->
+            <div class="bg-white rounded-xl shadow-lg border border-tesla-light p-6">
+                <h3 class="text-lg font-semibold text-tesla-dark mb-4">Charging Status Over Time</h3>
+                <div class="relative" style="height: 300px;">
+                    <canvas id="chargingChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 flex items-center space-x-3">
+            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-tesla-red"></div>
+            <span class="text-tesla-dark">Loading...</span>
         </div>
     </div>
 
     <script>
-        let lastDataHash = '';
-        let lastChartData = {};
-        let autoRefreshInterval;
-        let chartRefreshInterval;
-        let selectedDateRange = { start: null, end: null };
+        // Chart.js configuration with Tesla colors
+        Chart.defaults.color = '#818181';
+        Chart.defaults.borderColor = '#f2f2f2';
+        
+        const teslaColors = {
+            primary: '#cc0000',
+            secondary: '#212121',
+            gray: '#818181',
+            light: '#f2f2f2',
+            white: '#fafafa'
+        };
+
+        // Initialize charts
+        let batteryChart, temperatureChart, tirePressureChart, chargingChart;
+        let autoRefreshInterval, chartRefreshInterval;
+        let dateRange = null;
 
         // Initialize date picker
-        flatpickr("#date-range", {
+        flatpickr("#dateRange", {
             mode: "range",
             dateFormat: "Y-m-d",
-            defaultDate: [new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), new Date()],
+            placeholder: "Select date range...",
             onChange: function(selectedDates) {
                 if (selectedDates.length === 2) {
-                    selectedDateRange.start = selectedDates[0];
-                    selectedDateRange.end = selectedDates[1];
+                    dateRange = {
+                        start: selectedDates[0].toISOString().split('T')[0],
+                        end: selectedDates[1].toISOString().split('T')[0]
+                    };
                     updateCharts();
                 }
             }
         });
 
-        function updateLatestData() {
-            $.get('/api/data/latest', function(data) {
-                const latestData = $('#latest-data');
-                const currentHash = JSON.stringify(data);
-                
-                // Check if data has changed
-                if (currentHash !== lastDataHash) {
-                    latestData.empty();
-                    
-                    const displayItems = {
-                        'Battery Level': data.battery_level ? data.battery_level + '%' : 'N/A',
-                        'Range': data.battery_range_km ? Math.round(data.battery_range_km) + ' km' : 'N/A',
-                        'State': data.state || 'N/A',
-                        'Inside Temp': data.inside_temp_c ? data.inside_temp_c.toFixed(1) + '°C' : 'N/A',
-                        'Outside Temp': data.outside_temp_c ? data.outside_temp_c.toFixed(1) + '°C' : 'N/A',
-                        'Charging State': data.charging_state || 'N/A',
-                        'Location': data.location || 'N/A',
-                        'Speed': data.speed_kmh ? Math.round(data.speed_kmh) + ' km/h' : 'N/A',
-                        'Odometer': data.odometer_km ? Math.round(data.odometer_km) + ' km' : 'N/A',
-                        'Car Version': data.car_version || 'N/A'
-                    };
-
-                    for (const [label, value] of Object.entries(displayItems)) {
-                        latestData.append(`
-                            <div class="data-item">
-                                <div class="label">${label}</div>
-                                <div class="value">${value}</div>
-                            </div>
-                        `);
+        function initializeCharts() {
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: teslaColors.secondary,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: teslaColors.secondary,
+                        titleColor: teslaColors.white,
+                        bodyColor: teslaColors.white,
+                        borderColor: teslaColors.red,
+                        borderWidth: 1
                     }
-                    
-                    // Add update animation
-                    $('.data-item').addClass('updated');
-                    setTimeout(() => {
-                        $('.data-item').removeClass('updated');
-                    }, 1000);
-                    
-                    lastDataHash = currentHash;
-                    updateTimestamp();
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: teslaColors.light
+                        },
+                        ticks: {
+                            color: teslaColors.gray
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: teslaColors.light
+                        },
+                        ticks: {
+                            color: teslaColors.gray
+                        }
+                    }
                 }
-            }).fail(function() {
-                console.log('Failed to fetch latest data');
+            };
+
+            // Battery Chart
+            const batteryCtx = document.getElementById('batteryChart').getContext('2d');
+            batteryChart = new Chart(batteryCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Battery Level (%)',
+                        data: [],
+                        borderColor: teslaColors.primary,
+                        backgroundColor: teslaColors.primary + '20',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: chartOptions
             });
+
+            // Temperature Chart
+            const tempCtx = document.getElementById('temperatureChart').getContext('2d');
+            temperatureChart = new Chart(tempCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Temperature (°C)',
+                        data: [],
+                        borderColor: teslaColors.primary,
+                        backgroundColor: teslaColors.primary + '20',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: chartOptions
+            });
+
+            // Tire Pressure Chart
+            const tireCtx = document.getElementById('tirePressureChart').getContext('2d');
+            tirePressureChart = new Chart(tireCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Tire Pressure (bar)',
+                        data: [],
+                        borderColor: teslaColors.primary,
+                        backgroundColor: teslaColors.primary + '20',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: chartOptions
+            });
+
+            // Charging Chart
+            const chargingCtx = document.getElementById('chargingChart').getContext('2d');
+            chargingChart = new Chart(chargingCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Charging Status',
+                        data: [],
+                        borderColor: teslaColors.primary,
+                        backgroundColor: teslaColors.primary + '20',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: chartOptions
+            });
+        }
+
+        function updateLatestData() {
+            fetch('/api/data/latest')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data) {
+                        const vehicle = data.data;
+                        
+                        // Update status cards
+                        document.getElementById('batteryLevel').textContent = `${vehicle.battery_level}%`;
+                        document.getElementById('batteryStatus').textContent = vehicle.charging_state || 'Not charging';
+                        
+                        document.getElementById('temperature').textContent = `${vehicle.outside_temp}°C`;
+                        document.getElementById('tempStatus').textContent = 'Outside temperature';
+                        
+                        document.getElementById('tirePressure').textContent = `${vehicle.tire_pressure_fl} bar`;
+                        document.getElementById('tireStatus').textContent = 'Front left tire';
+                        
+                        document.getElementById('odometer').textContent = `${vehicle.odometer} km`;
+                        document.getElementById('odoStatus').textContent = 'Total distance';
+                        
+                        // Update location
+                        document.getElementById('location').textContent = vehicle.address || 'Location unavailable';
+                        document.getElementById('lastUpdate').textContent = `Last updated: ${new Date(vehicle.timestamp).toLocaleString()}`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching latest data:', error);
+                });
         }
 
         function updateCharts() {
-            const chartEndpoints = [
-                { id: 'battery-chart', url: '/api/charts/battery' },
-                { id: 'temperature-chart', url: '/api/charts/temperature' },
-                { id: 'charging-chart', url: '/api/charts/charging' },
-                { id: 'tire-pressure-chart', url: '/api/charts/tire_pressure' }
-            ];
-
-            // Add date range parameters if selected
-            const params = {};
-            if (selectedDateRange.start && selectedDateRange.end) {
-                params.start_date = selectedDateRange.start.toISOString().split('T')[0];
-                params.end_date = selectedDateRange.end.toISOString().split('T')[0];
+            const params = new URLSearchParams();
+            if (dateRange) {
+                params.append('start_date', dateRange.start);
+                params.append('end_date', dateRange.end);
             }
 
-            chartEndpoints.forEach(chart => {
-                const url = new URL(chart.url, window.location.origin);
-                Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-                
-                $.get(url.toString(), function(data) {
-                    const currentDataHash = JSON.stringify(data);
-                    
-                    // Only update if data has changed
-                    if (currentDataHash !== lastChartData[chart.id]) {
-                        Plotly.newPlot(chart.id, data.data, data.layout, {
-                            responsive: true,
-                            displayModeBar: true,
-                            modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d']
-                        });
-                        lastChartData[chart.id] = currentDataHash;
-                    }
-                }).fail(function() {
-                    console.log(`Failed to fetch ${chart.id} data`);
-                });
+            // Update each chart
+            ['battery', 'temperature', 'tire_pressure', 'charging'].forEach(chartType => {
+                fetch(`/api/charts/${chartType}?${params.toString()}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const chart = getChartByType(chartType);
+                            if (chart) {
+                                chart.data.labels = data.data.labels;
+                                chart.data.datasets[0].data = data.data.values;
+                                chart.update('none');
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error(`Error updating ${chartType} chart:`, error);
+                    });
             });
         }
 
-        function updateTimestamp() {
-            const now = new Date();
-            $('#update-time').text(now.toLocaleTimeString());
+        function getChartByType(type) {
+            switch(type) {
+                case 'battery': return batteryChart;
+                case 'temperature': return temperatureChart;
+                case 'tire_pressure': return tirePressureChart;
+                case 'charging': return chargingChart;
+                default: return null;
+            }
         }
 
         function startAutoRefresh() {
-            // Clear existing intervals
-            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
-            if (chartRefreshInterval) clearInterval(chartRefreshInterval);
-            
-            // Start new intervals
-            autoRefreshInterval = setInterval(updateLatestData, 30000); // 30 seconds
-            chartRefreshInterval = setInterval(updateCharts, 60000); // 60 seconds
+            // Update data every 30 seconds
+            autoRefreshInterval = setInterval(() => {
+                updateLatestData();
+            }, 30000);
+
+            // Update charts every 60 seconds
+            chartRefreshInterval = setInterval(() => {
+                updateCharts();
+            }, 60000);
         }
 
         function stopAutoRefresh() {
-            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
-            if (chartRefreshInterval) clearInterval(chartRefreshInterval);
-        }
-
-        function refreshData() {
-            const btn = $('#refresh-data-btn');
-            btn.prop('disabled', true).text('Refreshing...');
-            
-            // Trigger data ingestion
-            $.post('/api/ingest', function(response) {
-                console.log('Data ingestion triggered:', response);
-                // Update data after a short delay
-                setTimeout(() => {
-                    updateLatestData();
-                    updateCharts();
-                    btn.prop('disabled', false).text('Refresh Data');
-                }, 2000);
-            }).fail(function() {
-                console.log('Failed to trigger data ingestion');
-                btn.prop('disabled', false).text('Refresh Data');
-            });
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+            if (chartRefreshInterval) {
+                clearInterval(chartRefreshInterval);
+                chartRefreshInterval = null;
+            }
         }
 
         // Event listeners
-        $('#auto-refresh-toggle').change(function() {
+        document.getElementById('ingestBtn').addEventListener('click', function() {
+            this.disabled = true;
+            this.textContent = 'Fetching...';
+            
+            fetch('/api/ingest', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateLatestData();
+                        updateCharts();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error ingesting data:', error);
+                })
+                .finally(() => {
+                    this.disabled = false;
+                    this.textContent = 'Fetch Latest Data';
+                });
+        });
+
+        document.getElementById('manualRefreshBtn').addEventListener('click', function() {
+            updateLatestData();
+            updateCharts();
+        });
+
+        document.getElementById('autoRefreshToggle').addEventListener('change', function() {
             if (this.checked) {
                 startAutoRefresh();
+                document.getElementById('refreshStatus').textContent = '30s';
+                document.getElementById('chartStatus').textContent = '60s';
             } else {
                 stopAutoRefresh();
+                document.getElementById('refreshStatus').textContent = 'Off';
+                document.getElementById('chartStatus').textContent = 'Off';
             }
         });
 
-        $('#refresh-data-btn').click(refreshData);
-
-        // Initial load
-        updateLatestData();
-        updateCharts();
-        startAutoRefresh();
-
-        // Add hover effects for better UX
-        $(document).on('mouseenter', '.data-item', function() {
-            $(this).css('transform', 'scale(1.05)');
-        }).on('mouseleave', '.data-item', function() {
-            $(this).css('transform', 'scale(1)');
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            updateLatestData();
+            updateCharts();
+            startAutoRefresh();
         });
     </script>
 </body>
