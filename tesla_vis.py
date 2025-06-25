@@ -6,6 +6,8 @@ import json
 import requests
 from sqlalchemy import desc, text
 import pytz
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 
 app = Flask(__name__)
 
@@ -530,6 +532,31 @@ def fetch_and_store_tesla_data():
     except Exception as e:
         db.session.rollback()
         return {"status": "error", "message": str(e)}
+
+# Initialize scheduler for automatic data ingestion
+scheduler = BackgroundScheduler()
+scheduler.start()
+
+def automatic_data_ingestion():
+    """Automatically fetch and store Tesla data every minute"""
+    try:
+        # Import here to avoid circular imports
+        from tesla_vis_data_ingestion import fetch_and_store_data
+        fetch_and_store_data()
+        print(f"[{datetime.now()}] Automatic data ingestion completed")
+    except Exception as e:
+        print(f"[{datetime.now()}] Automatic data ingestion failed: {e}")
+
+# Schedule automatic data ingestion every 1 minute
+scheduler.add_job(
+    func=automatic_data_ingestion,
+    trigger=IntervalTrigger(minutes=1),
+    id='tesla_data_ingestion',
+    name='Fetch Tesla data every minute',
+    replace_existing=True
+)
+
+print("Automatic data ingestion scheduled every 1 minute")
 
 if __name__ == '__main__':
     with app.app_context():

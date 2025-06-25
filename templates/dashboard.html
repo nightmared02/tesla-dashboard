@@ -39,16 +39,13 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <button id="ingestBtn" class="bg-tesla-red hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200">
-                        Fetch Latest Data
-                    </button>
                     <div class="flex items-center space-x-2">
-                        <span class="text-tesla-gray text-sm">Auto-refresh:</span>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="autoRefreshToggle" class="sr-only peer" checked>
-                            <div class="w-11 h-6 bg-tesla-gray peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-tesla-red rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-tesla-red"></div>
-                        </label>
+                        <label class="text-sm text-gray-300">Auto-refresh:</label>
+                        <input type="checkbox" id="autoRefresh" checked class="w-4 h-4 text-tesla-red bg-gray-700 border-gray-600 rounded focus:ring-tesla-red focus:ring-2">
                     </div>
+                    <button id="refreshBtn" class="px-3 py-1 text-sm bg-tesla-red text-white rounded hover:bg-red-700 transition-colors">
+                        Refresh Now
+                    </button>
                 </div>
             </div>
         </div>
@@ -233,7 +230,9 @@
 
         // Initialize charts
         let batteryChart, temperatureChart, tirePressureChart, chargingChart;
-        let autoRefreshInterval, chartRefreshInterval;
+        let autoRefreshInterval;
+        const DATA_REFRESH_INTERVAL = 60000; // 1 minute
+        const CHART_REFRESH_INTERVAL = 60000; // 1 minute
         let dateRange = null;
 
         // Initialize date picker
@@ -462,12 +461,12 @@
             // Update data every 30 seconds
             autoRefreshInterval = setInterval(() => {
                 updateLatestData();
-            }, 30000);
+            }, DATA_REFRESH_INTERVAL);
 
             // Update charts every 60 seconds
             chartRefreshInterval = setInterval(() => {
                 updateCharts();
-            }, 60000);
+            }, CHART_REFRESH_INTERVAL);
         }
 
         function stopAutoRefresh() {
@@ -482,33 +481,12 @@
         }
 
         // Event listeners
-        document.getElementById('ingestBtn').addEventListener('click', function() {
-            this.disabled = true;
-            this.textContent = 'Fetching...';
-            
-            fetch('/api/ingest', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        updateLatestData();
-                        updateCharts();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error ingesting data:', error);
-                })
-                .finally(() => {
-                    this.disabled = false;
-                    this.textContent = 'Fetch Latest Data';
-                });
-        });
-
-        document.getElementById('manualRefreshBtn').addEventListener('click', function() {
+        document.getElementById('refreshBtn').addEventListener('click', function() {
             updateLatestData();
             updateCharts();
         });
 
-        document.getElementById('autoRefreshToggle').addEventListener('change', function() {
+        document.getElementById('autoRefresh').addEventListener('change', function() {
             if (this.checked) {
                 startAutoRefresh();
                 document.getElementById('refreshStatus').textContent = '30s';
