@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesla Data Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .chart-container {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .latest-data {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .data-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        .data-item.updated {
+            background: #e8f5e8;
+            transform: scale(1.02);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .label {
+            font-weight: bold;
+            color: #666;
+        }
+        .value {
+            color: #333;
+            font-size: 1.2em;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-live {
+            background-color: #28a745;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .last-update {
+            text-align: right;
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <h1>
+            <span class="status-indicator status-live"></span>
+            Tesla Data Dashboard (Metric Units)
+        </h1>
+        
+        <div class="latest-data">
+            <h2>Latest Vehicle Status</h2>
+            <div class="data-grid" id="latest-data">
+                <!-- Will be populated by JavaScript -->
+            </div>
+            <div class="last-update" id="last-update">
+                Last updated: <span id="update-time">Loading...</span>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div id="battery-chart"></div>
+        </div>
+
+        <div class="chart-container">
+            <div id="temperature-chart"></div>
+        </div>
+
+        <div class="chart-container">
+            <div id="charging-chart"></div>
+        </div>
+
+        <div class="chart-container">
+            <div id="tire-pressure-chart"></div>
+        </div>
+    </div>
+
+    <script>
+        let lastDataHash = '';
+        let lastChartData = {};
+
+        function updateLatestData() {
+            $.get('/api/data/latest', function(data) {
+                const latestData = $('#latest-data');
+                const currentHash = JSON.stringify(data);
+                
+                // Check if data has changed
+                if (currentHash !== lastDataHash) {
+                    latestData.empty();
+                    
+                    const displayItems = {
+                        'Battery Level': data.battery_level ? data.battery_level + '%' : 'N/A',
+                        'Range': data.battery_range_km ? Math.round(data.battery_range_km) + ' km' : 'N/A',
+                        'State': data.state || 'N/A',
+                        'Inside Temp': data.inside_temp_c ? data.inside_temp_c.toFixed(1) + '°C' : 'N/A',
+                        'Outside Temp': data.outside_temp_c ? data.outside_temp_c.toFixed(1) + '°C' : 'N/A',
+                        'Charging State': data.charging_state || 'N/A',
+                        'Location': data.location || 'N/A',
+                        'Speed': data.speed_kmh ? Math.round(data.speed_kmh) + ' km/h' : 'N/A',
+                        'Odometer': data.odometer_km ? Math.round(data.odometer_km) + ' km' : 'N/A',
+                        'Car Version': data.car_version || 'N/A'
+                    };
+
+                    for (const [label, value] of Object.entries(displayItems)) {
+                        latestData.append(`
+                            <div class="data-item">
+                                <div class="label">${label}</div>
+                                <div class="value">${value}</div>
+                            </div>
+                        `);
+                    }
+                    
+                    // Add update animation
+                    $('.data-item').addClass('updated');
+                    setTimeout(() => {
+                        $('.data-item').removeClass('updated');
+                    }, 1000);
+                    
+                    lastDataHash = currentHash;
+                    updateTimestamp();
+                }
+            }).fail(function() {
+                console.log('Failed to fetch latest data');
+            });
+        }
+
+        function updateCharts() {
+            const chartEndpoints = [
+                { id: 'battery-chart', url: '/api/charts/battery' },
+                { id: 'temperature-chart', url: '/api/charts/temperature' },
+                { id: 'charging-chart', url: '/api/charts/charging' },
+                { id: 'tire-pressure-chart', url: '/api/charts/tire_pressure' }
+            ];
+
+            chartEndpoints.forEach(chart => {
+                $.get(chart.url, function(data) {
+                    const currentDataHash = JSON.stringify(data);
+                    
+                    // Only update if data has changed
+                    if (currentDataHash !== lastChartData[chart.id]) {
+                        Plotly.newPlot(chart.id, data.data, data.layout, {
+                            responsive: true,
+                            displayModeBar: true,
+                            modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d']
+                        });
+                        lastChartData[chart.id] = currentDataHash;
+                    }
+                }).fail(function() {
+                    console.log(`Failed to fetch ${chart.id} data`);
+                });
+            });
+        }
+
+        function updateTimestamp() {
+            const now = new Date();
+            $('#update-time').text(now.toLocaleTimeString());
+        }
+
+        // Initial load
+        updateLatestData();
+        updateCharts();
+
+        // Refresh data every 30 seconds for real-time updates
+        setInterval(updateLatestData, 30000);
+        setInterval(updateCharts, 60000); // Charts update every minute
+
+        // Add hover effects for better UX
+        $(document).on('mouseenter', '.data-item', function() {
+            $(this).css('transform', 'scale(1.05)');
+        }).on('mouseleave', '.data-item', function() {
+            $(this).css('transform', 'scale(1)');
+        });
+    </script>
+</body>
+</html> 

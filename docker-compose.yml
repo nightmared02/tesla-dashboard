@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  influxdb:
+    image: influxdb:2.7
+    container_name: tesla_influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=tesla123456
+      - DOCKER_INFLUXDB_INIT_ORG=tesla_org
+      - DOCKER_INFLUXDB_INIT_BUCKET=tesla_data
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=tesla_token_123456
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    restart: unless-stopped
+
+volumes:
+  influxdb_data: 

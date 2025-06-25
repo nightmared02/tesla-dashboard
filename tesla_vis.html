@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesla Data Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .chart-container {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        body {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            min-height: 100vh;
+        }
+        .glass-effect {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-4">
+                <i class="fas fa-car text-red-500"></i> Tesla Data Dashboard
+            </h1>
+            <p class="text-white opacity-80">Real-time monitoring and analytics for your Tesla</p>
+        </div>
+
+        <!-- Current Status Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="statusCards">
+            <div class="metric-card rounded-xl p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm opacity-80">Battery Level</p>
+                        <p class="text-2xl font-bold" id="batteryLevel">--</p>
+                    </div>
+                    <i class="fas fa-battery-three-quarters text-3xl opacity-60"></i>
+                </div>
+            </div>
+            
+            <div class="metric-card rounded-xl p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm opacity-80">Range</p>
+                        <p class="text-2xl font-bold" id="batteryRange">--</p>
+                    </div>
+                    <i class="fas fa-road text-3xl opacity-60"></i>
+                </div>
+            </div>
+            
+            <div class="metric-card rounded-xl p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm opacity-80">Car State</p>
+                        <p class="text-xl font-bold" id="carState">--</p>
+                    </div>
+                    <i class="fas fa-car text-3xl opacity-60"></i>
+                </div>
+            </div>
+            
+            <div class="metric-card rounded-xl p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm opacity-80">Location</p>
+                        <p class="text-xl font-bold" id="location">--</p>
+                    </div>
+                    <i class="fas fa-map-marker-alt text-3xl opacity-60"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Battery Chart -->
+            <div class="chart-container rounded-xl p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">Battery Metrics</h3>
+                    <select id="batteryDays" class="bg-blue-100 text-blue-800 px-3 py-1 rounded">
+                        <option value="1">1 Day</option>
+                        <option value="7" selected>7 Days</option>
+                        <option value="30">30 Days</option>
+                    </select>
+                </div>
+                <div id="batteryChart" style="height: 400px;"></div>
+            </div>
+
+            <!-- Temperature Chart -->
+            <div class="chart-container rounded-xl p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">Temperature Monitoring</h3>
+                    <select id="tempDays" class="bg-blue-100 text-blue-800 px-3 py-1 rounded">
+                        <option value="1">1 Day</option>
+                        <option value="7" selected>7 Days</option>
+                        <option value="30">30 Days</option>
+                    </select>
+                </div>
+                <div id="temperatureChart" style="height: 400px;"></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Charging Chart -->
+            <div class="chart-container rounded-xl p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">Charging Sessions</h3>
+                    <select id="chargingDays" class="bg-blue-100 text-blue-800 px-3 py-1 rounded">
+                        <option value="7">7 Days</option>
+                        <option value="30" selected>30 Days</option>
+                        <option value="90">90 Days</option>
+                    </select>
+                </div>
+                <div id="chargingChart" style="height: 400px;"></div>
+            </div>
+
+            <!-- Tire Pressure Chart -->
+            <div class="chart-container rounded-xl p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">Tire Pressure</h3>
+                    <select id="tireDays" class="bg-blue-100 text-blue-800 px-3 py-1 rounded">
+                        <option value="7">7 Days</option>
+                        <option value="30" selected>30 Days</option>
+                        <option value="90">90 Days</option>
+                    </select>
+                </div>
+                <div id="tirePressureChart" style="height: 400px;"></div>
+            </div>
+        </div>
+
+        <!-- Additional Metrics -->
+        <div class="glass-effect rounded-xl p-6 mb-8">
+            <h3 class="text-xl font-bold text-white mb-4">Additional Metrics</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="additionalMetrics">
+                <div class="text-center">
+                    <p class="text-sm text-white opacity-80">Inside Temp</p>
+                    <p class="text-xl font-bold text-white" id="insideTemp">--</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-sm text-white opacity-80">Outside Temp</p>
+                    <p class="text-xl font-bold text-white" id="outsideTemp">--</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-sm text-white opacity-80">Odometer</p>
+                    <p class="text-xl font-bold text-white" id="odometer">--</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-sm text-white opacity-80">Charging State</p>
+                    <p class="text-lg font-bold text-white" id="chargingState">--</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-white opacity-60">
+            <p>&copy; 2025 Tesla Data Dashboard - Last updated: <span id="lastUpdated">--</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Dashboard functionality
+        class TeslaDashboard {
+            constructor() {
+                this.init();
+                this.loadLatestData();
+                this.loadCharts();
+                this.setupEventListeners();
+                
+                // Auto-refresh every 5 minutes
+                setInterval(() => {
+                    this.loadLatestData();
+                    this.loadCharts();
+                }, 300000);
+            }
+
+            init() {
+                console.log('Tesla Dashboard initialized');
+            }
+
+            setupEventListeners() {
+                document.getElementById('batteryDays').addEventListener('change', () => this.loadBatteryChart());
+                document.getElementById('tempDays').addEventListener('change', () => this.loadTemperatureChart());
+                document.getElementById('chargingDays').addEventListener('change', () => this.loadChargingChart());
+                document.getElementById('tireDays').addEventListener('change', () => this.loadTirePressureChart());
+            }
+
+            async loadLatestData() {
+                try {
+                    const response = await fetch('/api/data/latest');
+                    const data = await response.json();
+                    
+                    if (data && Object.keys(data).length > 0) {
+                        this.updateStatusCards(data);
+                        this.updateAdditionalMetrics(data);
+                        document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+                    }
+                } catch (error) {
+                    console.error('Error loading latest data:', error);
+                }
+            }
+
+            updateStatusCards(data) {
+                document.getElementById('batteryLevel').textContent = data.battery_level ? `${data.battery_level}%` : '--';
+                document.getElementById('batteryRange').textContent = data.battery_range ? `${Math.round(data.battery_range)} mi` : '--';
+                document.getElementById('carState').textContent = data.car_state || data.state || '--';
+                document.getElementById('location').textContent = data.location || '--';
+            }
+
+            updateAdditionalMetrics(data) {
+                document.getElementById('insideTemp').textContent = data.inside_temp ? `${data.inside_temp}°C` : '--';
+                document.getElementById('outsideTemp').textContent = data.outside_temp ? `${data.outside_temp}°C` : '--';
+                document.getElementById('odometer').textContent = data.odometer ? `${Math.round(data.odometer)} mi` : '--';
+                document.getElementById('chargingState').textContent = data.charging_state || '--';
+            }
+
+            async loadCharts() {
+                await Promise.all([
+                    this.loadBatteryChart(),
+                    this.loadTemperatureChart(),
+                    this.loadChargingChart(),
+                    this.loadTirePressureChart()
+                ]);
+            }
+
+            async loadBatteryChart() {
+                try {
+                    const days = document.getElementById('batteryDays').value;
+                    const response = await fetch(`/api/charts/battery?days=${days}`);
+                    const chartData = await response.json();
+                    
+                    if (chartData && chartData.data) {
+                        Plotly.newPlot('batteryChart', chartData.data, chartData.layout, {responsive: true});
+                    }
+                } catch (error) {
+                    console.error('Error loading battery chart:', error);
+                    this.showNoDataMessage('batteryChart');
+                }
+            }
+
+            async loadTemperatureChart() {
+                try {
+                    const days = document.getElementById('tempDays').value;
+                    const response = await fetch(`/api/charts/temperature?days=${days}`);
+                    const chartData = await response.json();
+                    
+                    if (chartData && chartData.data) {
+                        Plotly.newPlot('temperatureChart', chartData.data, chartData.layout, {responsive: true});
+                    }
+                } catch (error) {
+                    console.error('Error loading temperature chart:', error);
+                    this.showNoDataMessage('temperatureChart');
+                }
+            }
+
+            async loadChargingChart() {
+                try {
+                    const days = document.getElementById('chargingDays').value;
+                    const response = await fetch(`/api/charts/charging?days=${days}`);
+                    const chartData = await response.json();
+                    
+                    if (chartData && chartData.data) {
+                        Plotly.newPlot('chargingChart', chartData.data, chartData.layout, {responsive: true});
+                    }
+                } catch (error) {
+                    console.error('Error loading charging chart:', error);
+                    this.showNoDataMessage('chargingChart');
+                }
+            }
+
+            async loadTirePressureChart() {
+                try {
+                    const days = document.getElementById('tireDays').value;
+                    const response = await fetch(`/api/charts/tire_pressure?days=${days}`);
+                    const chartData = await response.json();
+                    
+                    if (chartData && chartData.data) {
+                        Plotly.newPlot('tirePressureChart', chartData.data, chartData.layout, {responsive: true});
+                    }
+                } catch (error) {
+                    console.error('Error loading tire pressure chart:', error);
+                    this.showNoDataMessage('tirePressureChart');
+                }
+            }
+
+            showNoDataMessage(chartId) {
+                document.getElementById(chartId).innerHTML = `
+                    <div class="flex items-center justify-center h-full text-gray-500">
+                        <div class="text-center">
+                            <i class="fas fa-chart-line text-4xl mb-4"></i>
+                            <p>No data available</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize dashboard when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            new TeslaDashboard();
+        });
+    </script>
+</body>
+</html>
