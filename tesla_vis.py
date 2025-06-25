@@ -650,10 +650,9 @@ scheduler.start()
 def automatic_data_ingestion():
     """Automatically fetch and store Tesla data every minute"""
     try:
-        # Import here to avoid circular imports
-        from tesla_vis_data_ingestion import fetch_and_store_tesla_data
-        fetch_and_store_tesla_data()
-        print(f"[{datetime.now()}] Automatic data ingestion completed")
+        # Use the local function instead of importing from separate module
+        result = fetch_and_store_tesla_data()
+        print(f"[{datetime.now()}] Automatic data ingestion completed: {result}")
     except Exception as e:
         print(f"[{datetime.now()}] Automatic data ingestion failed: {e}")
 
