@@ -8,6 +8,7 @@ from sqlalchemy import desc, text
 import pytz
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from flask_wtf.csrf import CSRFProtect
 
 app = Flask(__name__)
 
@@ -411,6 +412,9 @@ def test_system():
             "timestamp": datetime.now().isoformat()
         }), 500
 
+csrf = CSRFProtect(app)
+
+@csrf.exempt
 @app.route('/api/ingest', methods=['POST'])
 def ingest_data():
     """Manually trigger data ingestion"""
