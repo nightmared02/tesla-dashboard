@@ -183,3 +183,12 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+def fetch_and_store_tesla_data():
+    """Standalone function for automatic data ingestion from tesla_vis.py"""
+    try:
+        ingester = TeslaDataIngester()
+        return ingester.ingest_data_once()
+    except Exception as e:
+        print(f"[{datetime.now()}] Automatic data ingestion failed: {e}")
+        return False
