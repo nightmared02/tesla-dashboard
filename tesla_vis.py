@@ -617,8 +617,8 @@ def automatic_data_ingestion():
     """Automatically fetch and store Tesla data every minute"""
     try:
         # Import here to avoid circular imports
-        from tesla_vis_data_ingestion import fetch_and_store_data
-        fetch_and_store_data()
+        from tesla_vis_data_ingestion import fetch_and_store_tesla_data
+        fetch_and_store_tesla_data()
         print(f"[{datetime.now()}] Automatic data ingestion completed")
     except Exception as e:
         print(f"[{datetime.now()}] Automatic data ingestion failed: {e}")
