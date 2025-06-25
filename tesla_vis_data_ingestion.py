@@ -20,7 +20,7 @@ load_dotenv()
 class TeslaDataIngester:
     def __init__(self):
         self.teslafi_token = os.environ.get('TESLAFI_API_TOKEN')
-        self.flask_app_url = os.environ.get('FLASK_APP_URL', 'http://localhost:5001')
+        self.flask_app_url = os.environ.get('FLASK_APP_URL', 'https://tesla-dashboard-production.up.railway.app')
         self.ingestion_interval = int(os.environ.get('INGESTION_INTERVAL_MINUTES', '5'))
         
         if not self.teslafi_token:
@@ -58,7 +58,13 @@ class TeslaDataIngester:
         """Store data in Flask app database via API"""
         try:
             # Post to our ingest endpoint
-            ingest_response = requests.post(f"{self.flask_app_url}/api/ingest", json=data, timeout=30)
+            ingest_url = f"{self.flask_app_url}/api/ingest"
+            print(f"[{datetime.now()}] Posting to: {ingest_url}")
+            
+            ingest_response = requests.post(ingest_url, json=data, timeout=30)
+            
+            print(f"[{datetime.now()}] Storage API response: {ingest_response.status_code}")
+            print(f"[{datetime.now()}] Storage API headers: {dict(ingest_response.headers)}")
             
             if ingest_response.status_code == 200:
                 result = ingest_response.json()
@@ -73,6 +79,7 @@ class TeslaDataIngester:
                     return False
             else:
                 print(f"[{datetime.now()}] Storage API error: HTTP {ingest_response.status_code}")
+                print(f"[{datetime.now()}] Response text: {ingest_response.text}")
                 return False
                 
         except requests.RequestException as e:

@@ -181,9 +181,9 @@ def battery_chart():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     
-    # Default to last 7 days if no dates provided
+    # Default to last hour if no dates provided
     if not start_date or not end_date:
-        since = datetime.now(timezone.utc) - timedelta(days=7)
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
         data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
     else:
         # Parse date strings and filter by date range
@@ -209,9 +209,9 @@ def temperature_chart():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     
-    # Default to last 7 days if no dates provided
+    # Default to last hour if no dates provided
     if not start_date or not end_date:
-        since = datetime.now(timezone.utc) - timedelta(days=7)
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
         data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
     else:
         # Parse date strings and filter by date range
@@ -237,9 +237,9 @@ def charging_chart():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     
-    # Default to last 7 days if no dates provided
+    # Default to last hour if no dates provided
     if not start_date or not end_date:
-        since = datetime.now(timezone.utc) - timedelta(days=7)
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
         data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
     else:
         # Parse date strings and filter by date range
@@ -265,9 +265,9 @@ def tire_pressure_chart():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     
-    # Default to last 7 days if no dates provided
+    # Default to last hour if no dates provided
     if not start_date or not end_date:
-        since = datetime.now(timezone.utc) - timedelta(days=7)
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
         data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
     else:
         # Parse date strings and filter by date range
@@ -307,9 +307,9 @@ def usage_stats_chart():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     
-    # Default to last 7 days if no dates provided
+    # Default to last hour if no dates provided
     if not start_date or not end_date:
-        since = datetime.now(timezone.utc) - timedelta(days=7)
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
         data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
     else:
         # Parse date strings and filter by date range
