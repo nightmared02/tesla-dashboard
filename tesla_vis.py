@@ -138,19 +138,35 @@ def get_latest_data():
     try:
         latest = TeslaData.query.order_by(desc(TeslaData.timestamp)).first()
         if latest:
-            return jsonify(latest.to_dict())
+            data_dict = latest.to_dict()
+            # Add debugging info
+            data_dict['debug'] = {
+                'record_count': TeslaData.query.count(),
+                'timestamp': datetime.now().isoformat(),
+                'teslafi_token_set': bool(os.environ.get('TESLAFI_API_TOKEN'))
+            }
+            return jsonify(data_dict)
         else:
             # Return a message indicating no data is available
             return jsonify({
                 "message": "No data available",
                 "timestamp": datetime.now().isoformat(),
-                "database_url": app.config['SQLALCHEMY_DATABASE_URI'].replace('://', '://***:***@') if '://' in app.config['SQLALCHEMY_DATABASE_URI'] else app.config['SQLALCHEMY_DATABASE_URI']
+                "database_url": app.config['SQLALCHEMY_DATABASE_URI'].replace('://', '://***:***@') if '://' in app.config['SQLALCHEMY_DATABASE_URI'] else app.config['SQLALCHEMY_DATABASE_URI'],
+                "debug": {
+                    "record_count": 0,
+                    "teslafi_token_set": bool(os.environ.get('TESLAFI_API_TOKEN'))
+                }
             })
     except Exception as e:
+        print(f"Error in get_latest_data: {e}")
         return jsonify({
             "error": str(e),
             "message": "Database connection error",
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "debug": {
+                "exception_type": type(e).__name__,
+                "teslafi_token_set": bool(os.environ.get('TESLAFI_API_TOKEN'))
+            }
         }), 500
 
 @app.route('/api/data/history')
@@ -307,46 +323,64 @@ def usage_stats_chart():
     if not data:
         return jsonify({'success': True, 'data': {'labels': [], 'datasets': []}})
     
-    # Get the latest data point for the selected period
-    latest_data = data[-1] if data else None
+    # Analyze the data to detect sessions
+    drive_sessions = 0
+    charge_sessions = 0
+    idle_sessions = 0
+    sleep_sessions = 0
     
-    if latest_data:
-        # Calculate totals for the period
-        drive_total = latest_data.drive_number or 0
-        charge_total = latest_data.charge_number or 0
-        idle_total = latest_data.idle_number or 0
-        sleep_total = latest_data.sleep_number or 0
-        
-        # Calculate percentages
-        total = drive_total + charge_total + idle_total + sleep_total
-        if total > 0:
-            drive_pct = (drive_total / total) * 100
-            charge_pct = (charge_total / total) * 100
-            idle_pct = (idle_total / total) * 100
-            sleep_pct = (sleep_total / total) * 100
-        else:
-            drive_pct = charge_pct = idle_pct = sleep_pct = 0
-        
-        return jsonify({
-            'success': True, 
-            'data': {
-                'labels': ['Drive', 'Charge', 'Idle', 'Sleep'],
-                'datasets': [{
-                    'data': [drive_pct, charge_pct, idle_pct, sleep_pct],
-                    'backgroundColor': ['#3B82F6', '#10B981', '#F59E0B', '#6B7280'],
-                    'borderColor': ['#2563EB', '#059669', '#D97706', '#4B5563'],
-                    'borderWidth': 2
-                }],
-                'totals': {
-                    'drive': drive_total,
-                    'charge': charge_total,
-                    'idle': idle_total,
-                    'sleep': sleep_total
-                }
+    # Group data by day to count sessions
+    from collections import defaultdict
+    daily_sessions = defaultdict(lambda: {'drive': 0, 'charge': 0, 'idle': 0, 'sleep': 0})
+    
+    for record in data:
+        date_key = record.date
+        if record.date:
+            # Count based on state and charging status
+            if record.charging_state and 'charging' in record.charging_state.lower():
+                daily_sessions[date_key]['charge'] += 1
+            elif record.shift_state and record.shift_state in ['D', 'R']:
+                daily_sessions[date_key]['drive'] += 1
+            elif record.state and 'sleep' in record.state.lower():
+                daily_sessions[date_key]['sleep'] += 1
+            else:
+                daily_sessions[date_key]['idle'] += 1
+    
+    # Sum up all sessions
+    for day_sessions in daily_sessions.values():
+        drive_sessions += day_sessions['drive']
+        charge_sessions += day_sessions['charge']
+        idle_sessions += day_sessions['idle']
+        sleep_sessions += day_sessions['sleep']
+    
+    # Calculate percentages
+    total = drive_sessions + charge_sessions + idle_sessions + sleep_sessions
+    if total > 0:
+        drive_pct = (drive_sessions / total) * 100
+        charge_pct = (charge_sessions / total) * 100
+        idle_pct = (idle_sessions / total) * 100
+        sleep_pct = (sleep_sessions / total) * 100
+    else:
+        drive_pct = charge_pct = idle_pct = sleep_pct = 0
+    
+    return jsonify({
+        'success': True, 
+        'data': {
+            'labels': ['Drive', 'Charge', 'Idle', 'Sleep'],
+            'datasets': [{
+                'data': [drive_pct, charge_pct, idle_pct, sleep_pct],
+                'backgroundColor': ['#3B82F6', '#10B981', '#F59E0B', '#6B7280'],
+                'borderColor': ['#2563EB', '#059669', '#D97706', '#4B5563'],
+                'borderWidth': 2
+            }],
+            'totals': {
+                'drive': drive_sessions,
+                'charge': charge_sessions,
+                'idle': idle_sessions,
+                'sleep': sleep_sessions
             }
-        })
-    
-    return jsonify({'success': True, 'data': {'labels': [], 'datasets': []}})
+        }
+    })
 
 @app.route('/api/test')
 def test_system():
