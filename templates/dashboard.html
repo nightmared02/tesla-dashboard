@@ -598,28 +598,28 @@
                     if (data && data.battery_level !== undefined) {
                         console.log('Updating widgets with data...');
                         // Update status cards
-                        document.getElementById('batteryLevel').textContent = `${data.battery_level}%`;
+                        document.getElementById('batteryLevel').textContent = (data.battery_level !== null && data.battery_level !== undefined) ? `${data.battery_level}%` : '--';
                         document.getElementById('batteryStatus').textContent = data.charging_state || 'Not charging';
                         
-                        document.getElementById('batteryRange').textContent = `${data.battery_range_km !== undefined ? data.battery_range_km.toFixed(0) : '--'} km`;
+                        document.getElementById('batteryRange').textContent = (data.battery_range_km !== null && data.battery_range_km !== undefined) ? `${data.battery_range_km.toFixed(0)} km` : '--';
                         document.getElementById('rangeStatus').textContent = 'Estimated range';
                         
-                        document.getElementById('temperature').textContent = `${data.outside_temp_c !== undefined ? data.outside_temp_c.toFixed(1) : '--'}°C`;
-                        document.getElementById('tempStatus').textContent = `Outside: ${data.outside_temp_c !== undefined ? data.outside_temp_c.toFixed(1) : '--'}°C | Inside: ${data.inside_temp_c !== undefined ? data.inside_temp_c.toFixed(1) : '--'}°C`;
+                        document.getElementById('temperature').textContent = (data.outside_temp_c !== null && data.outside_temp_c !== undefined) ? `${data.outside_temp_c.toFixed(1)}°C` : '--';
+                        document.getElementById('tempStatus').textContent = `Outside: ${(data.outside_temp_c !== null && data.outside_temp_c !== undefined) ? data.outside_temp_c.toFixed(1) : '--'}°C | Inside: ${(data.inside_temp_c !== null && data.inside_temp_c !== undefined) ? data.inside_temp_c.toFixed(1) : '--'}°C`;
                         
-                        document.getElementById('tirePressure').textContent = `${data.tpms_front_left_bar !== undefined ? data.tpms_front_left_bar.toFixed(1) : '--'} bar`;
-                        document.getElementById('tireStatus').textContent = `FL: ${data.tpms_front_left_bar !== undefined ? data.tpms_front_left_bar.toFixed(1) : '--'} | FR: ${data.tpms_front_right_bar !== undefined ? data.tpms_front_right_bar.toFixed(1) : '--'} | RL: ${data.tpms_rear_left_bar !== undefined ? data.tpms_rear_left_bar.toFixed(1) : '--'} | RR: ${data.tpms_rear_right_bar !== undefined ? data.tpms_rear_right_bar.toFixed(1) : '--'}`;
+                        document.getElementById('tirePressure').textContent = (data.tpms_front_left_bar !== null && data.tpms_front_left_bar !== undefined) ? `${data.tpms_front_left_bar.toFixed(1)} bar` : '--';
+                        document.getElementById('tireStatus').textContent = `FL: ${(data.tpms_front_left_bar !== null && data.tpms_front_left_bar !== undefined) ? data.tpms_front_left_bar.toFixed(1) : '--'} | FR: ${(data.tpms_front_right_bar !== null && data.tpms_front_right_bar !== undefined) ? data.tpms_front_right_bar.toFixed(1) : '--'} | RL: ${(data.tpms_rear_left_bar !== null && data.tpms_rear_left_bar !== undefined) ? data.tpms_rear_left_bar.toFixed(1) : '--'} | RR: ${(data.tpms_rear_right_bar !== null && data.tpms_rear_right_bar !== undefined) ? data.tpms_rear_right_bar.toFixed(1) : '--'}`;
                         
-                        document.getElementById('speed').textContent = `${data.speed_kmh !== undefined ? data.speed_kmh.toFixed(0) : '--'} km/h`;
+                        document.getElementById('speed').textContent = (data.speed_kmh !== null && data.speed_kmh !== undefined) ? `${data.speed_kmh.toFixed(0)} km/h` : '--';
                         document.getElementById('speedStatus').textContent = data.shift_state || 'Parked';
                         
                         document.getElementById('chargingState').textContent = data.charging_state || 'Disconnected';
-                        document.getElementById('chargingStatus').textContent = data.charge_rate !== undefined ? `${data.charge_rate.toFixed(1)} kW` : 'Not charging';
+                        document.getElementById('chargingStatus').textContent = (data.charge_rate !== null && data.charge_rate !== undefined) ? `${data.charge_rate.toFixed(1)} kW` : 'Not charging';
                         
                         document.getElementById('climateState').textContent = data.is_climate_on ? 'ON' : 'OFF';
-                        document.getElementById('climateStatus').textContent = `Driver: ${data.driver_temp_setting_c !== undefined ? data.driver_temp_setting_c.toFixed(1) : '--'}°C | Passenger: ${data.passenger_temp_setting_c !== undefined ? data.passenger_temp_setting_c.toFixed(1) : '--'}°C`;
+                        document.getElementById('climateStatus').textContent = `Driver: ${(data.driver_temp_setting_c !== null && data.driver_temp_setting_c !== undefined) ? data.driver_temp_setting_c.toFixed(1) : '--'}°C | Passenger: ${(data.passenger_temp_setting_c !== null && data.passenger_temp_setting_c !== undefined) ? data.passenger_temp_setting_c.toFixed(1) : '--'}°C`;
                         
-                        document.getElementById('odometer').textContent = `${data.odometer_km.toFixed(1)} km`;
+                        document.getElementById('odometer').textContent = (data.odometer_km !== null && data.odometer_km !== undefined) ? `${data.odometer_km.toFixed(1)} km` : '--';
                         document.getElementById('odoStatus').textContent = 'Total distance';
                         
                         // Vehicle State
@@ -630,23 +630,23 @@
                         document.getElementById('vehicleStatus').textContent = `${sentryStatus} | ${valetStatus}`;
                         
                         // Charging Details
-                        if (data.time_to_full_charge !== undefined && data.time_to_full_charge > 0) {
+                        if (data.time_to_full_charge !== null && data.time_to_full_charge !== undefined && data.time_to_full_charge > 0) {
                             const hours = Math.floor(data.time_to_full_charge);
                             const minutes = Math.round((data.time_to_full_charge - hours) * 60);
                             document.getElementById('chargingDetails').textContent = `${hours}h ${minutes}m`;
                         } else {
                             document.getElementById('chargingDetails').textContent = '--';
                         }
-                        const energyAdded = data.charge_energy_added !== undefined ? `${data.charge_energy_added.toFixed(1)} kWh` : '--';
+                        const energyAdded = (data.charge_energy_added !== null && data.charge_energy_added !== undefined) ? `${data.charge_energy_added.toFixed(1)} kWh` : '--';
                         document.getElementById('chargingDetailsStatus').textContent = `Added: ${energyAdded}`;
                         
                         // Location
-                        if (data.latitude !== undefined && data.longitude !== undefined) {
+                        if (data.latitude !== null && data.latitude !== undefined && data.longitude !== null && data.longitude !== undefined) {
                             document.getElementById('location').textContent = `${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)}`;
                         } else {
                             document.getElementById('location').textContent = '--';
                         }
-                        const heading = data.heading !== undefined ? `${data.heading.toFixed(0)}°` : '--';
+                        const heading = (data.heading !== null && data.heading !== undefined) ? `${data.heading.toFixed(0)}°` : '--';
                         document.getElementById('locationStatus').textContent = `Heading: ${heading}`;
                         
                         // Update location string
