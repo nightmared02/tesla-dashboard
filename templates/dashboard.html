@@ -473,15 +473,44 @@
                 type: 'line',
                 data: {
                     labels: [],
-                    datasets: [{
-                        label: 'Tire Pressure (bar)',
-                        data: [],
-                        borderColor: teslaColors.primary,
-                        backgroundColor: teslaColors.primary + '20',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4
-                    }]
+                    datasets: [
+                        {
+                            label: 'Front Left',
+                            data: [],
+                            borderColor: '#3B82F6',
+                            backgroundColor: '#3B82F620',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Front Right',
+                            data: [],
+                            borderColor: '#10B981',
+                            backgroundColor: '#10B98120',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Rear Left',
+                            data: [],
+                            borderColor: '#F59E0B',
+                            backgroundColor: '#F59E0B20',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Rear Right',
+                            data: [],
+                            borderColor: '#EF4444',
+                            backgroundColor: '#EF444420',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4
+                        }
+                    ]
                 },
                 options: chartOptions
             });
@@ -687,6 +716,14 @@
                                         document.getElementById('idleCount').textContent = data.data.totals.idle;
                                         document.getElementById('sleepCount').textContent = data.data.totals.sleep;
                                     }
+                                } else if (chartType === 'tire_pressure') {
+                                    // Handle tire pressure chart (multiple datasets)
+                                    chart.data.labels = data.data.labels;
+                                    chart.data.datasets[0].data = data.data.front_left;
+                                    chart.data.datasets[1].data = data.data.front_right;
+                                    chart.data.datasets[2].data = data.data.rear_left;
+                                    chart.data.datasets[3].data = data.data.rear_right;
+                                    chart.update('none');
                                 } else {
                                     // Handle line charts
                                     chart.data.labels = data.data.labels;

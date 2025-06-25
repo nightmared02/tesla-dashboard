@@ -212,7 +212,7 @@ def temperature_chart():
     # Convert UTC timestamps to Europe/Sofia timezone
     sofia_tz = pytz.timezone('Europe/Sofia')
     labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
-    values = [d.outside_temp_c for d in data]
+    values = [d.outside_temp for d in data]
     
     return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
 
@@ -268,9 +268,23 @@ def tire_pressure_chart():
     # Convert UTC timestamps to Europe/Sofia timezone
     sofia_tz = pytz.timezone('Europe/Sofia')
     labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
-    values = [d.tpms_front_left_bar for d in data]
     
-    return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
+    # Convert tire pressures from psi to bar
+    front_left = [psi_to_bar(d.tpms_front_left) for d in data]
+    front_right = [psi_to_bar(d.tpms_front_right) for d in data]
+    rear_left = [psi_to_bar(d.tpms_rear_left) for d in data]
+    rear_right = [psi_to_bar(d.tpms_rear_right) for d in data]
+    
+    return jsonify({
+        'success': True, 
+        'data': {
+            'labels': labels,
+            'front_left': front_left,
+            'front_right': front_right,
+            'rear_left': rear_left,
+            'rear_right': rear_right
+        }
+    })
 
 @app.route('/api/charts/usage_stats')
 def usage_stats_chart():
