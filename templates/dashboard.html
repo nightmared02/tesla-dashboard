@@ -55,66 +55,116 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Status Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- Battery Status -->
-            <div class="bg-white rounded-xl shadow-lg border border-tesla-light p-6">
+            <!-- Battery Level Card -->
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-tesla-gray text-sm font-medium">Battery Level</p>
-                        <p id="batteryLevel" class="text-3xl font-bold text-tesla-dark">--</p>
-                        <p id="batteryStatus" class="text-sm text-tesla-gray">--</p>
+                        <p class="text-sm text-gray-600 mb-1">Battery Level</p>
+                        <p class="text-2xl font-bold text-gray-900" id="batteryLevel">--</p>
+                        <p class="text-sm text-gray-500" id="batteryStatus">--</p>
                     </div>
                     <div class="w-12 h-12 bg-tesla-red rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
+                        <!-- Heroicons: Bolt -->
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                     </div>
                 </div>
             </div>
 
-            <!-- Temperature -->
-            <div class="bg-white rounded-xl shadow-lg border border-tesla-light p-6">
+            <!-- Outside Temperature Card -->
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-tesla-gray text-sm font-medium">Temperature</p>
-                        <p id="temperature" class="text-3xl font-bold text-tesla-dark">--</p>
-                        <p id="tempStatus" class="text-sm text-tesla-gray">--</p>
+                        <p class="text-sm text-gray-600 mb-1">Outside Temp</p>
+                        <p class="text-2xl font-bold text-gray-900" id="temperature">--</p>
+                        <p class="text-sm text-gray-500" id="tempStatus">--</p>
                     </div>
                     <div class="w-12 h-12 bg-tesla-red rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
+                        <!-- Heroicons: Thermometer -->
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </div>
                 </div>
             </div>
 
-            <!-- Tire Pressure -->
-            <div class="bg-white rounded-xl shadow-lg border border-tesla-light p-6">
+            <!-- Inside Temperature Card -->
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-tesla-gray text-sm font-medium">Tire Pressure</p>
-                        <p id="tirePressure" class="text-3xl font-bold text-tesla-dark">--</p>
-                        <p id="tireStatus" class="text-sm text-tesla-gray">--</p>
+                        <p class="text-sm text-gray-600 mb-1">Inside Temp</p>
+                        <p class="text-2xl font-bold text-gray-900" id="insideTemperature">--</p>
+                        <p class="text-sm text-gray-500">Cabin</p>
                     </div>
                     <div class="w-12 h-12 bg-tesla-red rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
+                        <!-- Heroicons: Thermometer -->
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </div>
                 </div>
             </div>
 
-            <!-- Odometer -->
-            <div class="bg-white rounded-xl shadow-lg border border-tesla-light p-6">
+            <!-- Tire Pressure Cards -->
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-tesla-gray text-sm font-medium">Odometer</p>
-                        <p id="odometer" class="text-3xl font-bold text-tesla-dark">--</p>
-                        <p id="odoStatus" class="text-sm text-tesla-gray">--</p>
+                        <p class="text-sm text-gray-600 mb-1">Tire FL</p>
+                        <p class="text-2xl font-bold text-gray-900" id="tirePressureFL">--</p>
+                        <p class="text-sm text-gray-500">Front Left</p>
                     </div>
                     <div class="w-12 h-12 bg-tesla-red rounded-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
+                        <!-- Heroicons: Gauge -->
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m0 0a7 7 0 100-14 7 7 0 000 14zm0 0v2m0-2a7 7 0 100-14 7 7 0 000 14z"/></svg>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Tire FR</p>
+                        <p class="text-2xl font-bold text-gray-900" id="tirePressureFR">--</p>
+                        <p class="text-sm text-gray-500">Front Right</p>
+                    </div>
+                    <div class="w-12 h-12 bg-tesla-red rounded-full flex items-center justify-center">
+                        <!-- Heroicons: Gauge -->
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m0 0a7 7 0 100-14 7 7 0 000 14zm0 0v2m0-2a7 7 0 100-14 7 7 0 000 14z"/></svg>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Tire RL</p>
+                        <p class="text-2xl font-bold text-gray-900" id="tirePressureRL">--</p>
+                        <p class="text-sm text-gray-500">Rear Left</p>
+                    </div>
+                    <div class="w-12 h-12 bg-tesla-red rounded-full flex items-center justify-center">
+                        <!-- Heroicons: Gauge -->
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m0 0a7 7 0 100-14 7 7 0 000 14zm0 0v2m0-2a7 7 0 100-14 7 7 0 000 14z"/></svg>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Tire RR</p>
+                        <p class="text-2xl font-bold text-gray-900" id="tirePressureRR">--</p>
+                        <p class="text-sm text-gray-500">Rear Right</p>
+                    </div>
+                    <div class="w-12 h-12 bg-tesla-red rounded-full flex items-center justify-center">
+                        <!-- Heroicons: Gauge -->
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m0 0a7 7 0 100-14 7 7 0 000 14zm0 0v2m0-2a7 7 0 100-14 7 7 0 000 14z"/></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Odometer Card -->
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Odometer</p>
+                        <p class="text-2xl font-bold text-gray-900" id="odometer">--</p>
+                        <p class="text-sm text-gray-500" id="odoStatus">--</p>
+                    </div>
+                    <div class="w-12 h-12 bg-tesla-red rounded-full flex items-center justify-center">
+                        <!-- Heroicons: Speedometer -->
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m0 0a7 7 0 100-14 7 7 0 000 14zm0 0v2m0-2a7 7 0 100-14 7 7 0 000 14z"/></svg>
                     </div>
                 </div>
             </div>
@@ -381,11 +431,15 @@
                         document.getElementById('temperature').textContent = `${data.outside_temp_c}°C`;
                         document.getElementById('tempStatus').textContent = 'Outside temperature';
                         
-                        document.getElementById('tirePressure').textContent = `${data.tpms_front_left_bar.toFixed(1)} bar`;
-                        document.getElementById('tireStatus').textContent = 'Front left tire';
+                        document.getElementById('tirePressureFL').textContent = `${data.tpms_front_left_bar.toFixed(1)} bar`;
+                        document.getElementById('tirePressureFR').textContent = `${data.tpms_front_right_bar.toFixed(1)} bar`;
+                        document.getElementById('tirePressureRL').textContent = `${data.tpms_rear_left_bar.toFixed(1)} bar`;
+                        document.getElementById('tirePressureRR').textContent = `${data.tpms_rear_right_bar.toFixed(1)} bar`;
                         
                         document.getElementById('odometer').textContent = `${data.odometer_km.toFixed(1)} km`;
                         document.getElementById('odoStatus').textContent = 'Total distance';
+                        
+                        document.getElementById('insideTemperature').textContent = `${data.inside_temp_c !== undefined ? data.inside_temp_c.toFixed(1) : '--'}°C`;
                         
                         // Update location
                         document.getElementById('location').textContent = data.location || 'Location unavailable';
@@ -396,8 +450,10 @@
                         document.getElementById('batteryStatus').textContent = 'No data';
                         document.getElementById('temperature').textContent = '--';
                         document.getElementById('tempStatus').textContent = 'No data';
-                        document.getElementById('tirePressure').textContent = '--';
-                        document.getElementById('tireStatus').textContent = 'No data';
+                        document.getElementById('tirePressureFL').textContent = '--';
+                        document.getElementById('tirePressureFR').textContent = '--';
+                        document.getElementById('tirePressureRL').textContent = '--';
+                        document.getElementById('tirePressureRR').textContent = '--';
                         document.getElementById('odometer').textContent = '--';
                         document.getElementById('odoStatus').textContent = 'No data';
                         document.getElementById('location').textContent = 'No data available';
@@ -411,8 +467,10 @@
                     document.getElementById('batteryStatus').textContent = 'Connection failed';
                     document.getElementById('temperature').textContent = 'Error';
                     document.getElementById('tempStatus').textContent = 'Connection failed';
-                    document.getElementById('tirePressure').textContent = 'Error';
-                    document.getElementById('tireStatus').textContent = 'Connection failed';
+                    document.getElementById('tirePressureFL').textContent = 'Error';
+                    document.getElementById('tirePressureFR').textContent = 'Error';
+                    document.getElementById('tirePressureRL').textContent = 'Error';
+                    document.getElementById('tirePressureRR').textContent = 'Error';
                     document.getElementById('odometer').textContent = 'Error';
                     document.getElementById('odoStatus').textContent = 'Connection failed';
                     document.getElementById('location').textContent = 'Connection error';
