@@ -161,228 +161,161 @@ def get_history_data():
 
 @app.route('/api/charts/battery')
 def battery_chart():
-    days = request.args.get('days', 7, type=int)
-    since = datetime.now(timezone.utc) - timedelta(days=days)
-    data = db.session.query(TeslaData.timestamp, TeslaData.battery_level, TeslaData.battery_range).filter(
-        TeslaData.timestamp >= since, 
-        TeslaData.battery_level.isnot(None)
-    ).order_by(TeslaData.timestamp).all()
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
     
-    timestamps = [item[0] for item in data]
-    battery_levels = [item[1] for item in data]
-    battery_ranges_km = [miles_to_km(item[2]) for item in data]
+    # Default to last 7 days if no dates provided
+    if not start_date or not end_date:
+        since = datetime.now(timezone.utc) - timedelta(days=7)
+        data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
+    else:
+        # Parse date strings and filter by date range
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        data = TeslaData.query.filter(
+            TeslaData.timestamp >= start_dt,
+            TeslaData.timestamp < end_dt
+        ).order_by(TeslaData.timestamp).all()
     
-    fig = go.Figure()
+    if not data:
+        return jsonify({'data': [], 'layout': {'title': 'No battery data available for selected period'}})
     
-    # Battery Level trace with detailed hover
-    fig.add_trace(go.Scatter(
-        x=timestamps, 
-        y=battery_levels, 
-        mode='lines+markers', 
-        name='Battery Level (%)', 
-        yaxis='y',
-        hovertemplate='<b>Time:</b> %{x}<br>' +
-                     '<b>Battery Level:</b> %{y:.1f}%<br>' +
-                     '<extra></extra>',
-        hoverinfo='all'
-    ))
+    timestamps = [d.timestamp.strftime('%Y-%m-%d %H:%M') for d in data]
+    battery_levels = [d.battery_level for d in data]
+    battery_ranges = [d.battery_range_km for d in data]
     
-    # Battery Range trace with detailed hover
-    fig.add_trace(go.Scatter(
-        x=timestamps, 
-        y=battery_ranges_km, 
-        mode='lines+markers', 
-        name='Battery Range (km)', 
-        yaxis='y2',
-        hovertemplate='<b>Time:</b> %{x}<br>' +
-                     '<b>Range:</b> %{y:.1f} km<br>' +
-                     '<extra></extra>',
-        hoverinfo='all'
-    ))
+    trace1 = go.Scatter(x=timestamps, y=battery_levels, mode='lines+markers', name='Battery Level (%)', line=dict(color='#1f77b4'))
+    trace2 = go.Scatter(x=timestamps, y=battery_ranges, mode='lines+markers', name='Range (km)', yaxis='y2', line=dict(color='#ff7f0e'))
     
-    fig.update_layout(
+    layout = go.Layout(
         title='Battery Level and Range Over Time',
-        xaxis_title='Time',
+        xaxis=dict(title='Time'),
         yaxis=dict(title='Battery Level (%)', side='left'),
-        yaxis2=dict(title='Battery Range (km)', side='right', overlaying='y'),
+        yaxis2=dict(title='Range (km)', side='right', overlaying='y'),
         hovermode='x unified',
-        hoverlabel=dict(bgcolor="white", font_size=12)
+        showlegend=True
     )
     
-    return jsonify(json.loads(plotly.utils.PlotlyJSONEncoder().encode(fig)))
+    return jsonify({'data': [trace1, trace2], 'layout': layout})
 
 @app.route('/api/charts/temperature')
 def temperature_chart():
-    days = request.args.get('days', 7, type=int)
-    since = datetime.now(timezone.utc) - timedelta(days=days)
-    data = db.session.query(TeslaData.timestamp, TeslaData.inside_temp, TeslaData.outside_temp).filter(
-        TeslaData.timestamp >= since,
-        TeslaData.inside_temp.isnot(None)
-    ).order_by(TeslaData.timestamp).all()
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
     
-    timestamps = [item[0] for item in data]
-    inside_temps_c = [item[1] for item in data]  # Already in Celsius
-    outside_temps_c = [item[2] for item in data]  # Already in Celsius
+    # Default to last 7 days if no dates provided
+    if not start_date or not end_date:
+        since = datetime.now(timezone.utc) - timedelta(days=7)
+        data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
+    else:
+        # Parse date strings and filter by date range
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        data = TeslaData.query.filter(
+            TeslaData.timestamp >= start_dt,
+            TeslaData.timestamp < end_dt
+        ).order_by(TeslaData.timestamp).all()
     
-    fig = go.Figure()
+    if not data:
+        return jsonify({'data': [], 'layout': {'title': 'No temperature data available for selected period'}})
     
-    fig.add_trace(go.Scatter(
-        x=timestamps, 
-        y=inside_temps_c, 
-        mode='lines+markers', 
-        name='Inside Temperature (°C)',
-        hovertemplate='<b>Time:</b> %{x}<br>' +
-                     '<b>Inside Temp:</b> %{y:.1f}°C<br>' +
-                     '<extra></extra>',
-        hoverinfo='all'
-    ))
+    timestamps = [d.timestamp.strftime('%Y-%m-%d %H:%M') for d in data]
+    inside_temps = [d.inside_temp_c for d in data]
+    outside_temps = [d.outside_temp_c for d in data]
     
-    fig.add_trace(go.Scatter(
-        x=timestamps, 
-        y=outside_temps_c, 
-        mode='lines+markers', 
-        name='Outside Temperature (°C)',
-        hovertemplate='<b>Time:</b> %{x}<br>' +
-                     '<b>Outside Temp:</b> %{y:.1f}°C<br>' +
-                     '<extra></extra>',
-        hoverinfo='all'
-    ))
+    trace1 = go.Scatter(x=timestamps, y=inside_temps, mode='lines+markers', name='Inside Temperature (°C)', line=dict(color='#d62728'))
+    trace2 = go.Scatter(x=timestamps, y=outside_temps, mode='lines+markers', name='Outside Temperature (°C)', line=dict(color='#2ca02c'))
     
-    fig.update_layout(
-        title='Temperature Monitoring',
-        xaxis_title='Time',
-        yaxis_title='Temperature (°C)',
+    layout = go.Layout(
+        title='Temperature Over Time',
+        xaxis=dict(title='Time'),
+        yaxis=dict(title='Temperature (°C)'),
         hovermode='x unified',
-        hoverlabel=dict(bgcolor="white", font_size=12)
+        showlegend=True
     )
     
-    return jsonify(json.loads(plotly.utils.PlotlyJSONEncoder().encode(fig)))
+    return jsonify({'data': [trace1, trace2], 'layout': layout})
 
 @app.route('/api/charts/charging')
 def charging_chart():
-    days = request.args.get('days', 30, type=int)
-    since = datetime.now(timezone.utc) - timedelta(days=days)
-    data = db.session.query(TeslaData.timestamp, TeslaData.charge_rate, TeslaData.charger_power).filter(
-        TeslaData.timestamp >= since,
-        TeslaData.charging_state == 'Charging'
-    ).order_by(TeslaData.timestamp).all()
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
     
-    timestamps = [item[0] for item in data]
-    charge_rates_kmh = [mph_to_kmh(item[1]) for item in data]
-    charger_powers = [item[2] for item in data]
+    # Default to last 7 days if no dates provided
+    if not start_date or not end_date:
+        since = datetime.now(timezone.utc) - timedelta(days=7)
+        data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
+    else:
+        # Parse date strings and filter by date range
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        data = TeslaData.query.filter(
+            TeslaData.timestamp >= start_dt,
+            TeslaData.timestamp < end_dt
+        ).order_by(TeslaData.timestamp).all()
     
-    fig = go.Figure()
+    if not data:
+        return jsonify({'data': [], 'layout': {'title': 'No charging data available for selected period'}})
     
-    fig.add_trace(go.Scatter(
-        x=timestamps, 
-        y=charge_rates_kmh, 
-        mode='markers', 
-        name='Charge Rate (km/h)',
-        hovertemplate='<b>Time:</b> %{x}<br>' +
-                     '<b>Charge Rate:</b> %{y:.1f} km/h<br>' +
-                     '<extra></extra>',
-        hoverinfo='all'
-    ))
+    timestamps = [d.timestamp.strftime('%Y-%m-%d %H:%M') for d in data]
+    charge_rates = [d.charge_rate for d in data]
+    charge_energy = [d.charge_energy_added for d in data]
     
-    fig.add_trace(go.Scatter(
-        x=timestamps, 
-        y=charger_powers, 
-        mode='markers', 
-        name='Charger Power (kW)', 
-        yaxis='y2',
-        hovertemplate='<b>Time:</b> %{x}<br>' +
-                     '<b>Charger Power:</b> %{y:.1f} kW<br>' +
-                     '<extra></extra>',
-        hoverinfo='all'
-    ))
+    trace1 = go.Scatter(x=timestamps, y=charge_rates, mode='lines+markers', name='Charge Rate (kW)', line=dict(color='#9467bd'))
+    trace2 = go.Scatter(x=timestamps, y=charge_energy, mode='lines+markers', name='Energy Added (kWh)', yaxis='y2', line=dict(color='#8c564b'))
     
-    fig.update_layout(
-        title='Charging Sessions',
-        xaxis_title='Time',
-        yaxis=dict(title='Charge Rate (km/h)', side='left'),
-        yaxis2=dict(title='Charger Power (kW)', side='right', overlaying='y'),
+    layout = go.Layout(
+        title='Charging Data Over Time',
+        xaxis=dict(title='Time'),
+        yaxis=dict(title='Charge Rate (kW)', side='left'),
+        yaxis2=dict(title='Energy Added (kWh)', side='right', overlaying='y'),
         hovermode='x unified',
-        hoverlabel=dict(bgcolor="white", font_size=12)
+        showlegend=True
     )
     
-    return jsonify(json.loads(plotly.utils.PlotlyJSONEncoder().encode(fig)))
+    return jsonify({'data': [trace1, trace2], 'layout': layout})
 
 @app.route('/api/charts/tire_pressure')
 def tire_pressure_chart():
-    days = request.args.get('days', 30, type=int)
-    since = datetime.now(timezone.utc) - timedelta(days=days)
-    data = db.session.query(
-        TeslaData.timestamp, 
-        TeslaData.tpms_front_left, 
-        TeslaData.tpms_front_right,
-        TeslaData.tpms_rear_left,
-        TeslaData.tpms_rear_right
-    ).filter(
-        TeslaData.timestamp >= since,
-        TeslaData.tpms_front_left.isnot(None)
-    ).order_by(TeslaData.timestamp).all()
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
     
-    timestamps = [item[0] for item in data]
-    fl_pressure_bar = [psi_to_bar(item[1]) for item in data]
-    fr_pressure_bar = [psi_to_bar(item[2]) for item in data]
-    rl_pressure_bar = [psi_to_bar(item[3]) for item in data]
-    rr_pressure_bar = [psi_to_bar(item[4]) for item in data]
+    # Default to last 7 days if no dates provided
+    if not start_date or not end_date:
+        since = datetime.now(timezone.utc) - timedelta(days=7)
+        data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
+    else:
+        # Parse date strings and filter by date range
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        data = TeslaData.query.filter(
+            TeslaData.timestamp >= start_dt,
+            TeslaData.timestamp < end_dt
+        ).order_by(TeslaData.timestamp).all()
     
-    fig = go.Figure()
+    if not data:
+        return jsonify({'data': [], 'layout': {'title': 'No tire pressure data available for selected period'}})
     
-    fig.add_trace(go.Scatter(
-        x=timestamps, 
-        y=fl_pressure_bar, 
-        mode='lines+markers', 
-        name='Front Left',
-        hovertemplate='<b>Time:</b> %{x}<br>' +
-                     '<b>Front Left:</b> %{y:.2f} bar<br>' +
-                     '<extra></extra>',
-        hoverinfo='all'
-    ))
+    timestamps = [d.timestamp.strftime('%Y-%m-%d %H:%M') for d in data]
+    front_left = [d.tpms_front_left_bar for d in data]
+    front_right = [d.tpms_front_right_bar for d in data]
+    rear_left = [d.tpms_rear_left_bar for d in data]
+    rear_right = [d.tpms_rear_right_bar for d in data]
     
-    fig.add_trace(go.Scatter(
-        x=timestamps, 
-        y=fr_pressure_bar, 
-        mode='lines+markers', 
-        name='Front Right',
-        hovertemplate='<b>Time:</b> %{x}<br>' +
-                     '<b>Front Right:</b> %{y:.2f} bar<br>' +
-                     '<extra></extra>',
-        hoverinfo='all'
-    ))
+    trace1 = go.Scatter(x=timestamps, y=front_left, mode='lines+markers', name='Front Left (bar)', line=dict(color='#e377c2'))
+    trace2 = go.Scatter(x=timestamps, y=front_right, mode='lines+markers', name='Front Right (bar)', line=dict(color='#7f7f7f'))
+    trace3 = go.Scatter(x=timestamps, y=rear_left, mode='lines+markers', name='Rear Left (bar)', line=dict(color='#bcbd22'))
+    trace4 = go.Scatter(x=timestamps, y=rear_right, mode='lines+markers', name='Rear Right (bar)', line=dict(color='#17becf'))
     
-    fig.add_trace(go.Scatter(
-        x=timestamps, 
-        y=rl_pressure_bar, 
-        mode='lines+markers', 
-        name='Rear Left',
-        hovertemplate='<b>Time:</b> %{x}<br>' +
-                     '<b>Rear Left:</b> %{y:.2f} bar<br>' +
-                     '<extra></extra>',
-        hoverinfo='all'
-    ))
-    
-    fig.add_trace(go.Scatter(
-        x=timestamps, 
-        y=rr_pressure_bar, 
-        mode='lines+markers', 
-        name='Rear Right',
-        hovertemplate='<b>Time:</b> %{x}<br>' +
-                     '<b>Rear Right:</b> %{y:.2f} bar<br>' +
-                     '<extra></extra>',
-        hoverinfo='all'
-    ))
-    
-    fig.update_layout(
-        title='Tire Pressure Monitoring',
-        xaxis_title='Time',
-        yaxis_title='Pressure (bar)',
+    layout = go.Layout(
+        title='Tire Pressure Over Time',
+        xaxis=dict(title='Time'),
+        yaxis=dict(title='Pressure (bar)'),
         hovermode='x unified',
-        hoverlabel=dict(bgcolor="white", font_size=12)
+        showlegend=True
     )
     
-    return jsonify(json.loads(plotly.utils.PlotlyJSONEncoder().encode(fig)))
+    return jsonify({'data': [trace1, trace2, trace3, trace4], 'layout': layout})
 
 @app.route('/api/test')
 def test_system():
@@ -482,7 +415,7 @@ def add_test_data():
             longitude=-74.0060,
             speed=0.0,
             heading=0.0,
-            odometer=15000.0,
+            odometer=74565.0,
             shift_state="P",
             locked=True,
             sentry_mode=False,

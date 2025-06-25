@@ -6,6 +6,8 @@
     <title>Tesla Data Dashboard</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -80,6 +82,90 @@
             font-size: 0.9em;
             margin-top: 10px;
         }
+        .controls {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .date-picker {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .date-picker input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .refresh-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        .refresh-btn:hover {
+            background: #0056b3;
+        }
+        .refresh-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .auto-refresh-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
     </style>
 </head>
 <body>
@@ -88,6 +174,21 @@
             <span class="status-indicator status-live"></span>
             Tesla Data Dashboard (Metric Units)
         </h1>
+        
+        <div class="controls">
+            <div class="date-picker">
+                <label>Date Range:</label>
+                <input type="text" id="date-range" placeholder="Select date range">
+            </div>
+            <div class="auto-refresh-toggle">
+                <label>Auto-refresh:</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="auto-refresh-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <button class="refresh-btn" id="refresh-data-btn">Refresh Data</button>
+        </div>
         
         <div class="latest-data">
             <h2>Latest Vehicle Status</h2>
@@ -119,6 +220,23 @@
     <script>
         let lastDataHash = '';
         let lastChartData = {};
+        let autoRefreshInterval;
+        let chartRefreshInterval;
+        let selectedDateRange = { start: null, end: null };
+
+        // Initialize date picker
+        flatpickr("#date-range", {
+            mode: "range",
+            dateFormat: "Y-m-d",
+            defaultDate: [new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), new Date()],
+            onChange: function(selectedDates) {
+                if (selectedDates.length === 2) {
+                    selectedDateRange.start = selectedDates[0];
+                    selectedDateRange.end = selectedDates[1];
+                    updateCharts();
+                }
+            }
+        });
 
         function updateLatestData() {
             $.get('/api/data/latest', function(data) {
@@ -173,8 +291,18 @@
                 { id: 'tire-pressure-chart', url: '/api/charts/tire_pressure' }
             ];
 
+            // Add date range parameters if selected
+            const params = {};
+            if (selectedDateRange.start && selectedDateRange.end) {
+                params.start_date = selectedDateRange.start.toISOString().split('T')[0];
+                params.end_date = selectedDateRange.end.toISOString().split('T')[0];
+            }
+
             chartEndpoints.forEach(chart => {
-                $.get(chart.url, function(data) {
+                const url = new URL(chart.url, window.location.origin);
+                Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+                
+                $.get(url.toString(), function(data) {
                     const currentDataHash = JSON.stringify(data);
                     
                     // Only update if data has changed
@@ -197,13 +325,55 @@
             $('#update-time').text(now.toLocaleTimeString());
         }
 
+        function startAutoRefresh() {
+            // Clear existing intervals
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            if (chartRefreshInterval) clearInterval(chartRefreshInterval);
+            
+            // Start new intervals
+            autoRefreshInterval = setInterval(updateLatestData, 30000); // 30 seconds
+            chartRefreshInterval = setInterval(updateCharts, 60000); // 60 seconds
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            if (chartRefreshInterval) clearInterval(chartRefreshInterval);
+        }
+
+        function refreshData() {
+            const btn = $('#refresh-data-btn');
+            btn.prop('disabled', true).text('Refreshing...');
+            
+            // Trigger data ingestion
+            $.post('/api/ingest', function(response) {
+                console.log('Data ingestion triggered:', response);
+                // Update data after a short delay
+                setTimeout(() => {
+                    updateLatestData();
+                    updateCharts();
+                    btn.prop('disabled', false).text('Refresh Data');
+                }, 2000);
+            }).fail(function() {
+                console.log('Failed to trigger data ingestion');
+                btn.prop('disabled', false).text('Refresh Data');
+            });
+        }
+
+        // Event listeners
+        $('#auto-refresh-toggle').change(function() {
+            if (this.checked) {
+                startAutoRefresh();
+            } else {
+                stopAutoRefresh();
+            }
+        });
+
+        $('#refresh-data-btn').click(refreshData);
+
         // Initial load
         updateLatestData();
         updateCharts();
-
-        // Refresh data every 30 seconds for real-time updates
-        setInterval(updateLatestData, 30000);
-        setInterval(updateCharts, 60000); // Charts update every minute
+        startAutoRefresh();
 
         // Add hover effects for better UX
         $(document).on('mouseenter', '.data-item', function() {
