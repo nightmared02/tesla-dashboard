@@ -8,6 +8,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- Leaflet CSS and JS for maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body class="bg-tesla-white min-h-screen">
     <div class="max-w-3xl mx-auto px-4 py-8">
@@ -20,6 +23,7 @@
         <div id="options" class="mb-4"></div>
         <div class="bg-white rounded-xl shadow-lg border border-tesla-light p-6">
             <canvas id="widgetChart" style="height: 350px;"></canvas>
+            <div id="mapContainer" style="height: 400px; display: none;"></div>
         </div>
     </div>
     <script>
@@ -83,6 +87,10 @@
             return {};
         }
         function updateWidgetChart() {
+            // Show chart canvas and hide map container by default
+            document.getElementById('widgetChart').style.display = 'block';
+            document.getElementById('mapContainer').style.display = 'none';
+            
             // Battery Level (already implemented)
             if (widgetName === 'battery') {
                 // Fetch battery data for the selected date range
@@ -416,7 +424,7 @@
                         } else { if (widgetChart) widgetChart.destroy(); }
                     });
             }
-            // Location (lat/lon)
+            // Location (lat/lon) - Map implementation
             else if (widgetName === 'location') {
                 const params = new URLSearchParams();
                 if (dateRange && dateRange.start && dateRange.end) {
@@ -426,45 +434,101 @@
                 fetch(`/api/charts/location?${params.toString()}`)
                     .then(response => response.json())
                     .then(data => {
-                        if (data.success) {
-                            const labels = data.data.labels;
-                            const latitudes = data.data.latitudes;
-                            const longitudes = data.data.longitudes;
-                            if (widgetChart) widgetChart.destroy();
-                            const ctx = document.getElementById('widgetChart').getContext('2d');
-                            widgetChart = new Chart(ctx, {
-                                type: 'line',
-                                data: {
-                                    labels: labels,
-                                    datasets: [
-                                        {
-                                            label: 'Latitude',
-                                            data: latitudes,
-                                            borderColor: '#3B82F6',
-                                            backgroundColor: '#3B82F620',
-                                            borderWidth: 2,
-                                            fill: false,
-                                            tension: 0.4
-                                        },
-                                        {
-                                            label: 'Longitude',
-                                            data: longitudes,
-                                            borderColor: '#EF4444',
-                                            backgroundColor: '#EF444420',
-                                            borderWidth: 2,
-                                            fill: false,
-                                            tension: 0.4
-                                        }
-                                    ]
-                                },
-                                options: {
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    plugins: { legend: { display: true }, tooltip: { enabled: true } },
-                                    scales: { y: { title: { display: true, text: 'Lat/Lon' } } }
+                        if (data.success && data.data.latitudes && data.data.latitudes.length > 0) {
+                            // Hide chart canvas and show map container
+                            document.getElementById('widgetChart').style.display = 'none';
+                            const mapContainer = document.getElementById('mapContainer');
+                            mapContainer.style.display = 'block';
+                            
+                            // Clear previous map if exists
+                            if (window.locationMap) {
+                                window.locationMap.remove();
+                            }
+                            
+                            // Create map
+                            window.locationMap = L.map('mapContainer').setView([0, 0], 13);
+                            
+                            // Add OpenStreetMap tiles
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                attribution: '© OpenStreetMap contributors'
+                            }).addTo(window.locationMap);
+                            
+                            // Prepare GPS coordinates
+                            const coordinates = [];
+                            for (let i = 0; i < data.data.latitudes.length; i++) {
+                                if (data.data.latitudes[i] !== null && data.data.longitudes[i] !== null) {
+                                    coordinates.push([data.data.latitudes[i], data.data.longitudes[i]]);
                                 }
-                            });
-                        } else { if (widgetChart) widgetChart.destroy(); }
+                            }
+                            
+                            if (coordinates.length > 0) {
+                                // Add polyline for the route
+                                const routeLine = L.polyline(coordinates, {
+                                    color: '#cc0000',
+                                    weight: 4,
+                                    opacity: 0.8
+                                }).addTo(window.locationMap);
+                                
+                                // Add start marker
+                                const startMarker = L.marker(coordinates[0], {
+                                    icon: L.divIcon({
+                                        className: 'custom-div-icon',
+                                        html: '<div style="background-color: #10B981; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+                                        iconSize: [20, 20],
+                                        iconAnchor: [10, 10]
+                                    })
+                                }).addTo(window.locationMap);
+                                startMarker.bindPopup('<b>Start</b><br>' + data.data.labels[0]);
+                                
+                                // Add end marker
+                                if (coordinates.length > 1) {
+                                    const endMarker = L.marker(coordinates[coordinates.length - 1], {
+                                        icon: L.divIcon({
+                                            className: 'custom-div-icon',
+                                            html: '<div style="background-color: #EF4444; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
+                                            iconSize: [20, 20],
+                                            iconAnchor: [10, 10]
+                                        })
+                                    }).addTo(window.locationMap);
+                                    endMarker.bindPopup('<b>End</b><br>' + data.data.labels[data.data.labels.length - 1]);
+                                }
+                                
+                                // Fit map to show the entire route
+                                window.locationMap.fitBounds(routeLine.getBounds(), { padding: [20, 20] });
+                                
+                                // Add info box
+                                const infoBox = L.control();
+                                infoBox.onAdd = function() {
+                                    const div = L.DomUtil.create('div', 'info-box');
+                                    div.innerHTML = `
+                                        <div style="background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 12px;">
+                                            <strong>Route Info</strong><br>
+                                            Points: ${coordinates.length}<br>
+                                            Duration: ${data.data.labels.length > 1 ? 
+                                                new Date(data.data.labels[data.data.labels.length - 1]) - new Date(data.data.labels[0]) : 0} ms
+                                        </div>
+                                    `;
+                                    return div;
+                                };
+                                infoBox.addTo(window.locationMap);
+                            } else {
+                                // No valid coordinates
+                                mapContainer.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500"><div class="text-center"><p>No GPS data available for selected time range</p></div></div>';
+                            }
+                        } else {
+                            // No data or invalid data
+                            document.getElementById('widgetChart').style.display = 'none';
+                            const mapContainer = document.getElementById('mapContainer');
+                            mapContainer.style.display = 'block';
+                            mapContainer.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500"><div class="text-center"><p>No location data available for selected time range</p></div></div>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading location data:', error);
+                        document.getElementById('widgetChart').style.display = 'none';
+                        const mapContainer = document.getElementById('mapContainer');
+                        mapContainer.style.display = 'block';
+                        mapContainer.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500"><div class="text-center"><p>Error loading location data</p></div></div>';
                     });
             }
             // Temperature (inside/outside)
