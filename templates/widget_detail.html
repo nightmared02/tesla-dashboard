@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ widget_name|capitalize }} Details - Tesla Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</head>
+<body class="bg-tesla-white min-h-screen">
+    <div class="max-w-3xl mx-auto px-4 py-8">
+        <a href="/" class="text-tesla-red hover:underline">&larr; Back to Dashboard</a>
+        <h1 class="text-2xl font-bold mt-4 mb-2">{{ widget_name|capitalize }} Details</h1>
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Select Date/Time Range</label>
+            <input type="text" id="dateRange" class="px-4 py-2 border border-tesla-gray rounded-lg focus:ring-2 focus:ring-tesla-red focus:border-tesla-red outline-none" placeholder="Select date range...">
+        </div>
+        <div id="options" class="mb-4"></div>
+        <div class="bg-white rounded-xl shadow-lg border border-tesla-light p-6">
+            <canvas id="widgetChart" style="height: 350px;"></canvas>
+        </div>
+    </div>
+    <script>
+        // Widget name from Flask
+        const widgetName = "{{ widget_name }}";
+        // Date picker
+        let dateRange = null;
+        flatpickr("#dateRange", {
+            mode: "range",
+            dateFormat: "Y-m-d H:i",
+            enableTime: true,
+            onChange: function(selectedDates) {
+                if (selectedDates.length === 2) {
+                    dateRange = {
+                        start: selectedDates[0].toISOString().split('T')[0],
+                        end: selectedDates[1].toISOString().split('T')[0]
+                    };
+                    updateWidgetChart();
+                }
+            }
+        });
+        // Chart.js setup
+        let widgetChart;
+        function renderOptions() {
+            // For multi-value widgets, show checkboxes
+            const optionsDiv = document.getElementById('options');
+            optionsDiv.innerHTML = '';
+            if (widgetName === 'temperature') {
+                optionsDiv.innerHTML = `
+                    <label class="mr-4"><input type="checkbox" id="outsideTemp" checked> Outside Temp</label>
+                    <label><input type="checkbox" id="insideTemp" checked> Inside Temp</label>
+                `;
+            } else if (widgetName === 'tire_pressure') {
+                optionsDiv.innerHTML = `
+                    <label class="mr-2"><input type="checkbox" id="fl" checked> Front Left</label>
+                    <label class="mr-2"><input type="checkbox" id="fr" checked> Front Right</label>
+                    <label class="mr-2"><input type="checkbox" id="rl" checked> Rear Left</label>
+                    <label><input type="checkbox" id="rr" checked> Rear Right</label>
+                `;
+            }
+            // Add more widgets as needed
+        }
+        function getSelectedOptions() {
+            if (widgetName === 'temperature') {
+                return {
+                    outside: document.getElementById('outsideTemp').checked,
+                    inside: document.getElementById('insideTemp').checked
+                };
+            } else if (widgetName === 'tire_pressure') {
+                return {
+                    fl: document.getElementById('fl').checked,
+                    fr: document.getElementById('fr').checked,
+                    rl: document.getElementById('rl').checked,
+                    rr: document.getElementById('rr').checked
+                };
+            }
+            return {};
+        }
+        function updateWidgetChart() {
+            // Fetch data for the widget and update the chart
+            // (This is a placeholder, you will need to implement the correct API call and data mapping)
+            // Example: fetch(`/api/charts/${widgetName}?start_date=...&end_date=...`)
+            // For location, fetch GPS data and plot on a map (not implemented here)
+        }
+        renderOptions();
+        // Add event listeners for options
+        document.getElementById('options').addEventListener('change', updateWidgetChart);
+        // Initial chart render
+        updateWidgetChart();
+    </script>
+</body>
+</html> 

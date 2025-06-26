@@ -703,6 +703,12 @@ def test_scheduler():
             "timestamp": datetime.now().isoformat()
         }), 500
 
+@app.route('/widget/<widget_name>')
+def widget_detail(widget_name):
+    """Render the detailed graph view for a specific widget"""
+    # You can add logic here to validate widget_name or customize the page
+    return render_template('widget_detail.html', widget_name=widget_name)
+
 def safe_float(value):
     """Safely convert value to float, return None if not possible"""
     if value is None or value == '' or value == 'null':

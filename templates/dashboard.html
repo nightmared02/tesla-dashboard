@@ -46,9 +46,6 @@
                     <button id="refreshBtn" class="px-3 py-1 text-sm bg-tesla-red text-white rounded hover:bg-red-700 transition-colors">
                         Refresh Now
                     </button>
-                    <button id="forceRefreshBtn" class="px-3 py-1 text-sm bg-tesla-dark text-white rounded hover:bg-gray-800 transition-colors">
-                        Force Refresh
-                    </button>
                 </div>
             </div>
         </div>
@@ -59,7 +56,7 @@
         <!-- Status Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <!-- Battery Level Card -->
-            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200 cursor-pointer hover:shadow-lg transition" data-widget="battery">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Battery Level</p>
@@ -75,7 +72,7 @@
             </div>
 
             <!-- Battery Range Card -->
-            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200 cursor-pointer hover:shadow-lg transition" data-widget="battery_range">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Battery Range</p>
@@ -91,7 +88,7 @@
             </div>
 
             <!-- Temperature Card -->
-            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200 cursor-pointer hover:shadow-lg transition" data-widget="temperature">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Temperature</p>
@@ -107,7 +104,7 @@
             </div>
 
             <!-- Tire Pressure Card -->
-            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200 cursor-pointer hover:shadow-lg transition" data-widget="tire_pressure">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Tire Pressure</p>
@@ -123,7 +120,7 @@
             </div>
 
             <!-- Speed Card -->
-            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200 cursor-pointer hover:shadow-lg transition" data-widget="speed">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Speed</p>
@@ -139,7 +136,7 @@
             </div>
 
             <!-- Charging State Card -->
-            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200 cursor-pointer hover:shadow-lg transition" data-widget="charging">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Charging</p>
@@ -155,7 +152,7 @@
             </div>
 
             <!-- Climate Card -->
-            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200 cursor-pointer hover:shadow-lg transition" data-widget="climate">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Climate</p>
@@ -171,7 +168,7 @@
             </div>
 
             <!-- Odometer Card -->
-            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200 cursor-pointer hover:shadow-lg transition" data-widget="odometer">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Odometer</p>
@@ -187,7 +184,7 @@
             </div>
 
             <!-- Vehicle State Card -->
-            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200 cursor-pointer hover:shadow-lg transition" data-widget="vehicle_state">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Vehicle State</p>
@@ -203,7 +200,7 @@
             </div>
 
             <!-- Charging Details Card -->
-            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200 cursor-pointer hover:shadow-lg transition" data-widget="charging_details">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Charging Details</p>
@@ -219,7 +216,7 @@
             </div>
 
             <!-- Location Card -->
-            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200 cursor-pointer hover:shadow-lg transition" data-widget="location">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Location</p>
@@ -235,7 +232,7 @@
             </div>
 
             <!-- Usage Statistics Card -->
-            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+            <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200 cursor-pointer hover:shadow-lg transition" data-widget="usage_stats">
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Usage Statistics</p>
@@ -811,19 +808,6 @@
             updateCharts();
         });
 
-        document.getElementById('forceRefreshBtn').addEventListener('click', function() {
-            console.log('Force refresh triggered');
-            // Clear any cached data and force a fresh fetch
-            updateLatestData();
-            updateCharts();
-            // Also trigger a page reload if needed
-            setTimeout(() => {
-                if (confirm('Force refresh the entire page to clear all cache?')) {
-                    window.location.reload(true);
-                }
-            }, 1000);
-        });
-
         document.getElementById('autoRefresh').addEventListener('change', function() {
             if (this.checked) {
                 startAutoRefresh();
@@ -838,6 +822,14 @@
             updateLatestData();
             updateCharts();
             startAutoRefresh();
+        });
+
+        // Make widgets clickable and redirect to detailed graph page
+        document.querySelectorAll('[data-widget]').forEach(function(card) {
+            card.addEventListener('click', function() {
+                const widget = card.getAttribute('data-widget');
+                window.location.href = `/widget/${widget}`;
+            });
         });
     </script>
 </body>
