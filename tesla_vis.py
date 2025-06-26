@@ -6,8 +6,9 @@ import json
 import requests
 from sqlalchemy import desc, text
 import pytz
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.interval import IntervalTrigger
+import threading
+import time
+from flask_wtf.csrf import CSRFProtect
 
 # Force rebuild - 2025-06-26 00:15:00
 app = Flask(__name__)
@@ -525,24 +526,56 @@ def manual_ingest():
 @app.route('/api/ingest/status', methods=['GET'])
 def ingest_status():
     """Check the status of automatic data ingestion"""
+    global scheduler_running, last_run_time, next_run_time, scheduler_thread
+    
     try:
-        job = scheduler.get_job('tesla_data_ingestion')
-        if job:
-            return jsonify({
-                "status": "running",
-                "next_run": job.next_run_time.isoformat() if job.next_run_time else None,
-                "last_run": job.next_run_time.isoformat() if hasattr(job, 'last_run_time') and job.last_run_time else None,
-                "interval": "5 minutes"
-            })
-        else:
-            return jsonify({
-                "status": "not_found",
-                "message": "Ingestion job not found"
-            })
+        status_info = {
+            "status": "running" if scheduler_running else "stopped",
+            "next_run": next_run_time.isoformat() if next_run_time else None,
+            "last_run": last_run_time.isoformat() if last_run_time else None,
+            "interval": "5 minutes",
+            "thread_alive": scheduler_thread.is_alive() if scheduler_thread else False,
+            "current_time": datetime.now().isoformat()
+        }
+        return jsonify(status_info)
     except Exception as e:
         return jsonify({
             "status": "error",
             "error": str(e)
+        }), 500
+
+@app.route('/api/ingest/start', methods=['POST'])
+def start_ingestion():
+    """Start the automatic data ingestion scheduler"""
+    try:
+        start_scheduler()
+        return jsonify({
+            "success": True,
+            "message": "Scheduler started",
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
+
+@app.route('/api/ingest/stop', methods=['POST'])
+def stop_ingestion():
+    """Stop the automatic data ingestion scheduler"""
+    try:
+        stop_scheduler()
+        return jsonify({
+            "success": True,
+            "message": "Scheduler stopped",
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
         }), 500
 
 @app.route('/api/add-test-data', methods=['GET'])
@@ -776,9 +809,11 @@ def fetch_and_store_tesla_data():
         db.session.rollback()
         return {"status": "error", "message": str(e)}
 
-# Initialize scheduler for automatic data ingestion
-scheduler = BackgroundScheduler()
-scheduler.start()
+# Global variables for scheduling
+scheduler_thread = None
+scheduler_running = False
+last_run_time = None
+next_run_time = None
 
 def automatic_data_ingestion():
     """Automatically fetch and store Tesla data every 5 minutes"""
@@ -810,21 +845,71 @@ def automatic_data_ingestion():
         traceback.print_exc()
         return {"status": "error", "message": str(e)}
 
-# Schedule automatic data ingestion every 5 minutes with better error handling
-try:
-    job = scheduler.add_job(
-        func=automatic_data_ingestion,
-        trigger=IntervalTrigger(minutes=5),
-        id='tesla_data_ingestion',
-        name='Fetch Tesla data every 5 minutes',
-        replace_existing=True,
-        max_instances=1,  # Prevent multiple instances running simultaneously
-        coalesce=True     # Combine missed runs
-    )
-    print(f"[{datetime.now()}] Automatic data ingestion scheduled successfully")
-    print(f"[{datetime.now()}] Next run scheduled for: {job.next_run_time}")
-except Exception as e:
-    print(f"[{datetime.now()}] ERROR scheduling automatic data ingestion: {e}")
+def scheduler_worker():
+    """Background thread that runs data ingestion at exact 5-minute intervals"""
+    global scheduler_running, last_run_time, next_run_time
+    
+    print(f"[{datetime.now()}] Scheduler worker started")
+    scheduler_running = True
+    
+    while scheduler_running:
+        try:
+            now = datetime.now()
+            
+            # Calculate next run time (at exact 5-minute boundaries)
+            # Round down to the nearest 5-minute mark
+            minutes_since_hour = now.minute
+            minutes_to_next = 5 - (minutes_since_hour % 5)
+            if minutes_to_next == 5:
+                minutes_to_next = 0
+            
+            # Set next run time to exact minute boundary
+            next_run = now.replace(second=0, microsecond=0) + timedelta(minutes=minutes_to_next)
+            next_run_time = next_run
+            
+            print(f"[{datetime.now()}] Next scheduled run: {next_run}")
+            
+            # Wait until next run time
+            time_to_wait = (next_run - now).total_seconds()
+            if time_to_wait > 0:
+                print(f"[{datetime.now()}] Waiting {time_to_wait:.1f} seconds until next run")
+                time.sleep(time_to_wait)
+            
+            # Execute data ingestion
+            print(f"[{datetime.now()}] Executing scheduled data ingestion...")
+            last_run_time = datetime.now()
+            result = automatic_data_ingestion()
+            print(f"[{datetime.now()}] Scheduled ingestion completed: {result}")
+            
+            # Wait a bit before calculating next run time
+            time.sleep(10)
+            
+        except Exception as e:
+            print(f"[{datetime.now()}] ERROR in scheduler worker: {e}")
+            import traceback
+            traceback.print_exc()
+            time.sleep(60)  # Wait a minute before retrying
+
+def start_scheduler():
+    """Start the background scheduler thread"""
+    global scheduler_thread, scheduler_running
+    
+    if scheduler_thread is None or not scheduler_thread.is_alive():
+        scheduler_thread = threading.Thread(target=scheduler_worker, daemon=True)
+        scheduler_thread.start()
+        print(f"[{datetime.now()}] Scheduler thread started")
+    else:
+        print(f"[{datetime.now()}] Scheduler already running")
+
+def stop_scheduler():
+    """Stop the background scheduler thread"""
+    global scheduler_running
+    scheduler_running = False
+    print(f"[{datetime.now()}] Scheduler stop requested")
+
+# Start the scheduler when the app starts
+print(f"[{datetime.now()}] Starting Tesla data ingestion scheduler...")
+start_scheduler()
 
 # Also run once immediately on startup
 print(f"[{datetime.now()}] Running initial data ingestion...")
