@@ -879,16 +879,26 @@ def scheduler_worker():
             now = datetime.now()
             
             # Calculate next run time (at exact 5-minute boundaries)
-            # Round down to the nearest 5-minute mark
-            minutes_since_hour = now.minute
-            minutes_to_next = 5 - (minutes_since_hour % 5)
+            # Find the next 5-minute mark from now
+            current_minute = now.minute
+            current_second = now.second
+            
+            # Calculate minutes to next 5-minute boundary
+            minutes_to_next = 5 - (current_minute % 5)
             if minutes_to_next == 5:
                 minutes_to_next = 0
             
-            # Set next run time to exact minute boundary
-            next_run = now.replace(second=0, microsecond=0) + timedelta(minutes=minutes_to_next)
+            # If we're at the exact minute boundary and seconds are 0, run immediately
+            if current_minute % 5 == 0 and current_second < 10:
+                print(f"[{datetime.now()}] At exact minute boundary, running immediately")
+                next_run = now
+            else:
+                # Set next run time to exact minute boundary
+                next_run = now.replace(second=0, microsecond=0) + timedelta(minutes=minutes_to_next)
+            
             next_run_time = next_run
             
+            print(f"[{datetime.now()}] Current time: {now}")
             print(f"[{datetime.now()}] Next scheduled run: {next_run}")
             
             # Wait until next run time
