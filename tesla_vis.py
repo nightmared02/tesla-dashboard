@@ -228,14 +228,15 @@ def temperature_chart():
         ).order_by(TeslaData.timestamp).all()
     
     if not data:
-        return jsonify({'success': True, 'data': {'labels': [], 'values': []}})
+        return jsonify({'success': True, 'data': {'labels': [], 'outside': [], 'inside': []}})
     
     # Convert UTC timestamps to Europe/Sofia timezone
     sofia_tz = pytz.timezone('Europe/Sofia')
     labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
-    values = [d.outside_temp for d in data]
+    outside = [d.outside_temp for d in data]
+    inside = [d.inside_temp for d in data]
     
-    return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
+    return jsonify({'success': True, 'data': {'labels': labels, 'outside': outside, 'inside': inside}})
 
 @app.route('/api/charts/charging')
 def charging_chart():

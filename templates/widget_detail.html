@@ -239,13 +239,12 @@
                     .then(data => {
                         if (data.success) {
                             const labels = data.data.labels;
-                            // For now, only outside temp is available in backend
                             const options = getSelectedOptions();
                             const datasets = [];
                             if (options.outside) {
                                 datasets.push({
                                     label: 'Outside Temp (°C)',
-                                    data: data.data.values,
+                                    data: data.data.outside,
                                     borderColor: '#3B82F6',
                                     backgroundColor: '#3B82F620',
                                     borderWidth: 2,
@@ -253,13 +252,10 @@
                                     tension: 0.4
                                 });
                             }
-                            // TODO: Add inside temp if available in backend
                             if (options.inside) {
-                                // Fetch inside temp from /api/data/history and align with labels if needed
-                                // For now, skip or duplicate outside temp for demo
                                 datasets.push({
                                     label: 'Inside Temp (°C)',
-                                    data: data.data.values.map(() => null), // Placeholder
+                                    data: data.data.inside,
                                     borderColor: '#F59E0B',
                                     backgroundColor: '#F59E0B20',
                                     borderWidth: 2,
