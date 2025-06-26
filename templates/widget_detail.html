@@ -83,10 +83,57 @@
             return {};
         }
         function updateWidgetChart() {
-            // Fetch data for the widget and update the chart
-            // (This is a placeholder, you will need to implement the correct API call and data mapping)
-            // Example: fetch(`/api/charts/${widgetName}?start_date=...&end_date=...`)
-            // For location, fetch GPS data and plot on a map (not implemented here)
+            if (widgetName === 'battery') {
+                // Fetch battery data for the selected date range
+                const params = new URLSearchParams();
+                if (dateRange && dateRange.start && dateRange.end) {
+                    params.append('start_date', dateRange.start.split('T')[0]);
+                    params.append('end_date', dateRange.end.split('T')[0]);
+                }
+                fetch(`/api/charts/battery?${params.toString()}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const labels = data.data.labels;
+                            const values = data.data.values;
+                            if (widgetChart) widgetChart.destroy();
+                            const ctx = document.getElementById('widgetChart').getContext('2d');
+                            widgetChart = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: 'Battery Level (%)',
+                                        data: values,
+                                        borderColor: '#cc0000',
+                                        backgroundColor: '#cc000020',
+                                        borderWidth: 2,
+                                        fill: true,
+                                        tension: 0.4
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: true },
+                                        tooltip: { enabled: true }
+                                    },
+                                    scales: {
+                                        y: {
+                                            min: 0,
+                                            max: 100,
+                                            ticks: { callback: v => v + '%' }
+                                        }
+                                    }
+                                }
+                            });
+                        } else {
+                            if (widgetChart) widgetChart.destroy();
+                        }
+                    });
+            }
+            // TODO: Add logic for other widgets
         }
         renderOptions();
         // Add event listeners for options
