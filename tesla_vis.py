@@ -710,6 +710,140 @@ def widget_detail(widget_name):
     # You can add logic here to validate widget_name or customize the page
     return render_template('widget_detail.html', widget_name=widget_name)
 
+@app.route('/api/charts/climate')
+def climate_chart():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    if not start_date or not end_date:
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
+        data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
+    else:
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        data = TeslaData.query.filter(
+            TeslaData.timestamp >= start_dt,
+            TeslaData.timestamp < end_dt
+        ).order_by(TeslaData.timestamp).all()
+    sofia_tz = pytz.timezone('Europe/Sofia')
+    labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
+    values = [1 if d.is_climate_on else 0 for d in data]
+    return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
+
+@app.route('/api/charts/vehicle_state')
+def vehicle_state_chart():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    if not start_date or not end_date:
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
+        data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
+    else:
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        data = TeslaData.query.filter(
+            TeslaData.timestamp >= start_dt,
+            TeslaData.timestamp < end_dt
+        ).order_by(TeslaData.timestamp).all()
+    sofia_tz = pytz.timezone('Europe/Sofia')
+    labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
+    values = [1 if d.locked else 0 for d in data]
+    return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
+
+@app.route('/api/charts/sentry')
+def sentry_chart():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    if not start_date or not end_date:
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
+        data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
+    else:
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        data = TeslaData.query.filter(
+            TeslaData.timestamp >= start_dt,
+            TeslaData.timestamp < end_dt
+        ).order_by(TeslaData.timestamp).all()
+    sofia_tz = pytz.timezone('Europe/Sofia')
+    labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
+    values = [1 if d.sentry_mode else 0 for d in data]
+    return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
+
+@app.route('/api/charts/valet')
+def valet_chart():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    if not start_date or not end_date:
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
+        data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
+    else:
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        data = TeslaData.query.filter(
+            TeslaData.timestamp >= start_dt,
+            TeslaData.timestamp < end_dt
+        ).order_by(TeslaData.timestamp).all()
+    sofia_tz = pytz.timezone('Europe/Sofia')
+    labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
+    values = [1 if d.valet_mode else 0 for d in data]
+    return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
+
+@app.route('/api/charts/odometer')
+def odometer_chart():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    if not start_date or not end_date:
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
+        data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
+    else:
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        data = TeslaData.query.filter(
+            TeslaData.timestamp >= start_dt,
+            TeslaData.timestamp < end_dt
+        ).order_by(TeslaData.timestamp).all()
+    sofia_tz = pytz.timezone('Europe/Sofia')
+    labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
+    values = [d.odometer for d in data]
+    return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
+
+@app.route('/api/charts/speed')
+def speed_chart():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    if not start_date or not end_date:
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
+        data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
+    else:
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        data = TeslaData.query.filter(
+            TeslaData.timestamp >= start_dt,
+            TeslaData.timestamp < end_dt
+        ).order_by(TeslaData.timestamp).all()
+    sofia_tz = pytz.timezone('Europe/Sofia')
+    labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
+    values = [d.speed for d in data]
+    return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
+
+@app.route('/api/charts/location')
+def location_chart():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    if not start_date or not end_date:
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
+        data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
+    else:
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        data = TeslaData.query.filter(
+            TeslaData.timestamp >= start_dt,
+            TeslaData.timestamp < end_dt
+        ).order_by(TeslaData.timestamp).all()
+    sofia_tz = pytz.timezone('Europe/Sofia')
+    labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
+    latitudes = [d.latitude for d in data]
+    longitudes = [d.longitude for d in data]
+    return jsonify({'success': True, 'data': {'labels': labels, 'latitudes': latitudes, 'longitudes': longitudes}})
+
 def safe_float(value):
     """Safely convert value to float, return None if not possible"""
     if value is None or value == '' or value == 'null':

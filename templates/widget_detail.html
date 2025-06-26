@@ -184,46 +184,286 @@
             }
             // Climate (OFF=0, ON=1)
             else if (widgetName === 'climate') {
-                // Similar logic: fetch temperature or climate state, map to 0/1
-                // ... (to be implemented, see next step) ...
-            }
-            // Vehicle State (Locked=1, Unlocked=0), Sentry, Valet
-            else if (widgetName === 'vehicle_state' || widgetName === 'sentry' || widgetName === 'valet') {
-                // ... (to be implemented, see next step) ...
-            }
-            // Usage Statistics (pie chart and session counts)
-            else if (widgetName === 'usage_stats') {
                 const params = new URLSearchParams();
                 if (dateRange && dateRange.start && dateRange.end) {
                     params.append('start_date', dateRange.start.split('T')[0]);
                     params.append('end_date', dateRange.end.split('T')[0]);
                 }
-                fetch(`/api/charts/usage_stats?${params.toString()}`)
+                fetch(`/api/charts/climate?${params.toString()}`)
                     .then(response => response.json())
                     .then(data => {
-                        if (data.success && data.data && data.data.datasets && data.data.datasets[0]) {
-                            const chartData = data.data.datasets[0].data;
-                            const chartLabels = data.data.labels;
+                        if (data.success) {
+                            const labels = data.data.labels;
+                            const values = data.data.values;
                             if (widgetChart) widgetChart.destroy();
                             const ctx = document.getElementById('widgetChart').getContext('2d');
                             widgetChart = new Chart(ctx, {
-                                type: 'doughnut',
+                                type: 'line',
                                 data: {
-                                    labels: chartLabels,
+                                    labels: labels,
                                     datasets: [{
-                                        data: chartData,
-                                        backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#6B7280'],
-                                        borderColor: ['#2563EB', '#059669', '#D97706', '#4B5563'],
-                                        borderWidth: 2
+                                        label: 'Climate (0=OFF, 1=ON)',
+                                        data: values,
+                                        borderColor: '#10B981',
+                                        backgroundColor: '#10B98120',
+                                        borderWidth: 2,
+                                        fill: true,
+                                        tension: 0.4
                                     }]
                                 },
                                 options: {
                                     responsive: true,
                                     maintainAspectRatio: false,
-                                    plugins: { legend: { display: true }, tooltip: { enabled: true } }
+                                    plugins: { legend: { display: true }, tooltip: { enabled: true } },
+                                    scales: { y: { min: 0, max: 1, ticks: { stepSize: 1 } } }
                                 }
                             });
-                            // Show session counts (optional: add to DOM)
+                        } else { if (widgetChart) widgetChart.destroy(); }
+                    });
+            }
+            // Vehicle State (Locked=1, Unlocked=0)
+            else if (widgetName === 'vehicle_state') {
+                const params = new URLSearchParams();
+                if (dateRange && dateRange.start && dateRange.end) {
+                    params.append('start_date', dateRange.start.split('T')[0]);
+                    params.append('end_date', dateRange.end.split('T')[0]);
+                }
+                fetch(`/api/charts/vehicle_state?${params.toString()}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const labels = data.data.labels;
+                            const values = data.data.values;
+                            if (widgetChart) widgetChart.destroy();
+                            const ctx = document.getElementById('widgetChart').getContext('2d');
+                            widgetChart = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: 'Vehicle Locked (1=Locked, 0=Unlocked)',
+                                        data: values,
+                                        borderColor: '#6366F1',
+                                        backgroundColor: '#6366F120',
+                                        borderWidth: 2,
+                                        fill: true,
+                                        tension: 0.4
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: { legend: { display: true }, tooltip: { enabled: true } },
+                                    scales: { y: { min: 0, max: 1, ticks: { stepSize: 1 } } }
+                                }
+                            });
+                        } else { if (widgetChart) widgetChart.destroy(); }
+                    });
+            }
+            // Sentry Mode (OFF=0, ON=1)
+            else if (widgetName === 'sentry') {
+                const params = new URLSearchParams();
+                if (dateRange && dateRange.start && dateRange.end) {
+                    params.append('start_date', dateRange.start.split('T')[0]);
+                    params.append('end_date', dateRange.end.split('T')[0]);
+                }
+                fetch(`/api/charts/sentry?${params.toString()}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const labels = data.data.labels;
+                            const values = data.data.values;
+                            if (widgetChart) widgetChart.destroy();
+                            const ctx = document.getElementById('widgetChart').getContext('2d');
+                            widgetChart = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: 'Sentry Mode (0=OFF, 1=ON)',
+                                        data: values,
+                                        borderColor: '#F59E0B',
+                                        backgroundColor: '#F59E0B20',
+                                        borderWidth: 2,
+                                        fill: true,
+                                        tension: 0.4
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: { legend: { display: true }, tooltip: { enabled: true } },
+                                    scales: { y: { min: 0, max: 1, ticks: { stepSize: 1 } } }
+                                }
+                            });
+                        } else { if (widgetChart) widgetChart.destroy(); }
+                    });
+            }
+            // Valet Mode (OFF=0, ON=1)
+            else if (widgetName === 'valet') {
+                const params = new URLSearchParams();
+                if (dateRange && dateRange.start && dateRange.end) {
+                    params.append('start_date', dateRange.start.split('T')[0]);
+                    params.append('end_date', dateRange.end.split('T')[0]);
+                }
+                fetch(`/api/charts/valet?${params.toString()}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const labels = data.data.labels;
+                            const values = data.data.values;
+                            if (widgetChart) widgetChart.destroy();
+                            const ctx = document.getElementById('widgetChart').getContext('2d');
+                            widgetChart = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: 'Valet Mode (0=OFF, 1=ON)',
+                                        data: values,
+                                        borderColor: '#EF4444',
+                                        backgroundColor: '#EF444420',
+                                        borderWidth: 2,
+                                        fill: true,
+                                        tension: 0.4
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: { legend: { display: true }, tooltip: { enabled: true } },
+                                    scales: { y: { min: 0, max: 1, ticks: { stepSize: 1 } } }
+                                }
+                            });
+                        } else { if (widgetChart) widgetChart.destroy(); }
+                    });
+            }
+            // Odometer (km)
+            else if (widgetName === 'odometer') {
+                const params = new URLSearchParams();
+                if (dateRange && dateRange.start && dateRange.end) {
+                    params.append('start_date', dateRange.start.split('T')[0]);
+                    params.append('end_date', dateRange.end.split('T')[0]);
+                }
+                fetch(`/api/charts/odometer?${params.toString()}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const labels = data.data.labels;
+                            const values = data.data.values;
+                            if (widgetChart) widgetChart.destroy();
+                            const ctx = document.getElementById('widgetChart').getContext('2d');
+                            widgetChart = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: 'Odometer (km)',
+                                        data: values,
+                                        borderColor: '#3B82F6',
+                                        backgroundColor: '#3B82F620',
+                                        borderWidth: 2,
+                                        fill: true,
+                                        tension: 0.4
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: { legend: { display: true }, tooltip: { enabled: true } },
+                                    scales: { y: { title: { display: true, text: 'km' } } }
+                                }
+                            });
+                        } else { if (widgetChart) widgetChart.destroy(); }
+                    });
+            }
+            // Speed (km/h)
+            else if (widgetName === 'speed') {
+                const params = new URLSearchParams();
+                if (dateRange && dateRange.start && dateRange.end) {
+                    params.append('start_date', dateRange.start.split('T')[0]);
+                    params.append('end_date', dateRange.end.split('T')[0]);
+                }
+                fetch(`/api/charts/speed?${params.toString()}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const labels = data.data.labels;
+                            const values = data.data.values;
+                            if (widgetChart) widgetChart.destroy();
+                            const ctx = document.getElementById('widgetChart').getContext('2d');
+                            widgetChart = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: 'Speed (km/h)',
+                                        data: values,
+                                        borderColor: '#F59E0B',
+                                        backgroundColor: '#F59E0B20',
+                                        borderWidth: 2,
+                                        fill: true,
+                                        tension: 0.4
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: { legend: { display: true }, tooltip: { enabled: true } },
+                                    scales: { y: { title: { display: true, text: 'km/h' } } }
+                                }
+                            });
+                        } else { if (widgetChart) widgetChart.destroy(); }
+                    });
+            }
+            // Location (lat/lon)
+            else if (widgetName === 'location') {
+                const params = new URLSearchParams();
+                if (dateRange && dateRange.start && dateRange.end) {
+                    params.append('start_date', dateRange.start.split('T')[0]);
+                    params.append('end_date', dateRange.end.split('T')[0]);
+                }
+                fetch(`/api/charts/location?${params.toString()}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const labels = data.data.labels;
+                            const latitudes = data.data.latitudes;
+                            const longitudes = data.data.longitudes;
+                            if (widgetChart) widgetChart.destroy();
+                            const ctx = document.getElementById('widgetChart').getContext('2d');
+                            widgetChart = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: labels,
+                                    datasets: [
+                                        {
+                                            label: 'Latitude',
+                                            data: latitudes,
+                                            borderColor: '#3B82F6',
+                                            backgroundColor: '#3B82F620',
+                                            borderWidth: 2,
+                                            fill: false,
+                                            tension: 0.4
+                                        },
+                                        {
+                                            label: 'Longitude',
+                                            data: longitudes,
+                                            borderColor: '#EF4444',
+                                            backgroundColor: '#EF444420',
+                                            borderWidth: 2,
+                                            fill: false,
+                                            tension: 0.4
+                                        }
+                                    ]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: { legend: { display: true }, tooltip: { enabled: true } },
+                                    scales: { y: { title: { display: true, text: 'Lat/Lon' } } }
+                                }
+                            });
                         } else { if (widgetChart) widgetChart.destroy(); }
                     });
             }
