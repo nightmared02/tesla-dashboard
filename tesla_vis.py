@@ -506,6 +506,7 @@ def ingest_data():
 def manual_ingest():
     """Manual data ingestion endpoint (GET request for easy testing)"""
     try:
+        print(f"[{datetime.now()}] Manual ingestion triggered")
         result = fetch_and_store_tesla_data()
         return jsonify({
             "success": True, 
@@ -514,10 +515,34 @@ def manual_ingest():
             "timestamp": datetime.now().isoformat()
         })
     except Exception as e:
+        print(f"[{datetime.now()}] Manual ingestion failed: {e}")
         return jsonify({
             "success": False, 
             "error": str(e),
             "timestamp": datetime.now().isoformat()
+        }), 500
+
+@app.route('/api/ingest/status', methods=['GET'])
+def ingest_status():
+    """Check the status of automatic data ingestion"""
+    try:
+        job = scheduler.get_job('tesla_data_ingestion')
+        if job:
+            return jsonify({
+                "status": "running",
+                "next_run": job.next_run_time.isoformat() if job.next_run_time else None,
+                "last_run": job.next_run_time.isoformat() if hasattr(job, 'last_run_time') and job.last_run_time else None,
+                "interval": "5 minutes"
+            })
+        else:
+            return jsonify({
+                "status": "not_found",
+                "message": "Ingestion job not found"
+            })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "error": str(e)
         }), 500
 
 @app.route('/api/add-test-data', methods=['GET'])
@@ -738,24 +763,26 @@ scheduler = BackgroundScheduler()
 scheduler.start()
 
 def automatic_data_ingestion():
-    """Automatically fetch and store Tesla data every minute"""
+    """Automatically fetch and store Tesla data every 5 minutes"""
     try:
-        # Use the local function instead of importing from separate module
+        print(f"[{datetime.now()}] Starting automatic data ingestion on Railway...")
         result = fetch_and_store_tesla_data()
         print(f"[{datetime.now()}] Automatic data ingestion completed: {result}")
+        return result
     except Exception as e:
         print(f"[{datetime.now()}] Automatic data ingestion failed: {e}")
+        return {"status": "error", "message": str(e)}
 
-# Schedule automatic data ingestion every 1 minute
+# Schedule automatic data ingestion every 5 minutes
 scheduler.add_job(
     func=automatic_data_ingestion,
-    trigger=IntervalTrigger(minutes=1),
+    trigger=IntervalTrigger(minutes=5),
     id='tesla_data_ingestion',
-    name='Fetch Tesla data every minute',
+    name='Fetch Tesla data every 5 minutes',
     replace_existing=True
 )
 
-print("Automatic data ingestion scheduled every 1 minute")
+print("Automatic data ingestion scheduled every 5 minutes on Railway")
 
 if __name__ == '__main__':
     with app.app_context():
