@@ -874,58 +874,59 @@ def scheduler_worker():
     print(f"[{datetime.now()}] Scheduler worker started")
     scheduler_running = True
     
-    while scheduler_running:
-        try:
-            now = datetime.now()
-            
-            # Calculate next run time (at exact 5-minute boundaries)
-            # Find the next 5-minute mark from now
-            current_minute = now.minute
-            current_second = now.second
-            
-            # Calculate minutes to next 5-minute boundary
-            minutes_to_next = 5 - (current_minute % 5)
-            if minutes_to_next == 5:
-                minutes_to_next = 0
-            
-            # If we're at the exact minute boundary and seconds are 0, run immediately
-            if current_minute % 5 == 0 and current_second < 10:
-                print(f"[{datetime.now()}] At exact minute boundary, running immediately")
-                next_run = now
-            else:
-                # Set next run time to exact minute boundary
-                next_run = now.replace(second=0, microsecond=0) + timedelta(minutes=minutes_to_next)
-            
-            next_run_time = next_run
-            
-            print(f"[{datetime.now()}] Current time: {now}")
-            print(f"[{datetime.now()}] Next scheduled run: {next_run}")
-            
-            # Wait until next run time
-            time_to_wait = (next_run - now).total_seconds()
-            if time_to_wait > 0:
-                print(f"[{datetime.now()}] Waiting {time_to_wait:.1f} seconds until next run")
-                time.sleep(time_to_wait)
-            
-            # Execute data ingestion
-            print(f"[{datetime.now()}] ===== EXECUTING SCHEDULED DATA INGESTION =====")
-            last_run_time = datetime.now()
-            
-            # Check if TESLAFI_API_TOKEN is available
-            teslafi_token = os.environ.get('TESLAFI_API_TOKEN')
-            print(f"[{datetime.now()}] TESLAFI_API_TOKEN available: {bool(teslafi_token)}")
-            
-            result = automatic_data_ingestion()
-            print(f"[{datetime.now()}] ===== SCHEDULED INGESTION RESULT: {result} =====")
-            
-            # Wait a bit before calculating next run time
-            time.sleep(10)
-            
-        except Exception as e:
-            print(f"[{datetime.now()}] CRITICAL ERROR in scheduler worker: {e}")
-            import traceback
-            traceback.print_exc()
-            time.sleep(60)  # Wait a minute before retrying
+    with app.app_context():
+        while scheduler_running:
+            try:
+                now = datetime.now()
+                
+                # Calculate next run time (at exact 5-minute boundaries)
+                # Find the next 5-minute mark from now
+                current_minute = now.minute
+                current_second = now.second
+                
+                # Calculate minutes to next 5-minute boundary
+                minutes_to_next = 5 - (current_minute % 5)
+                if minutes_to_next == 5:
+                    minutes_to_next = 0
+                
+                # If we're at the exact minute boundary and seconds are 0, run immediately
+                if current_minute % 5 == 0 and current_second < 10:
+                    print(f"[{datetime.now()}] At exact minute boundary, running immediately")
+                    next_run = now
+                else:
+                    # Set next run time to exact minute boundary
+                    next_run = now.replace(second=0, microsecond=0) + timedelta(minutes=minutes_to_next)
+                
+                next_run_time = next_run
+                
+                print(f"[{datetime.now()}] Current time: {now}")
+                print(f"[{datetime.now()}] Next scheduled run: {next_run}")
+                
+                # Wait until next run time
+                time_to_wait = (next_run - now).total_seconds()
+                if time_to_wait > 0:
+                    print(f"[{datetime.now()}] Waiting {time_to_wait:.1f} seconds until next run")
+                    time.sleep(time_to_wait)
+                
+                # Execute data ingestion
+                print(f"[{datetime.now()}] ===== EXECUTING SCHEDULED DATA INGESTION =====")
+                last_run_time = datetime.now()
+                
+                # Check if TESLAFI_API_TOKEN is available
+                teslafi_token = os.environ.get('TESLAFI_API_TOKEN')
+                print(f"[{datetime.now()}] TESLAFI_API_TOKEN available: {bool(teslafi_token)}")
+                
+                result = automatic_data_ingestion()
+                print(f"[{datetime.now()}] ===== SCHEDULED INGESTION RESULT: {result} =====")
+                
+                # Wait a bit before calculating next run time
+                time.sleep(10)
+                
+            except Exception as e:
+                print(f"[{datetime.now()}] CRITICAL ERROR in scheduler worker: {e}")
+                import traceback
+                traceback.print_exc()
+                time.sleep(60)  # Wait a minute before retrying
 
 def start_scheduler():
     """Start the background scheduler thread"""
