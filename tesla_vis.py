@@ -683,22 +683,28 @@ def fetch_and_store_tesla_data():
     TESLAFI_API_TOKEN = os.environ.get('TESLAFI_API_TOKEN')
     
     if not TESLAFI_API_TOKEN:
-        print("Please set TESLAFI_API_TOKEN environment variable")
-        return {"error": "TESLAFI_API_TOKEN not set"}
+        print(f"[{datetime.now()}] ERROR: TESLAFI_API_TOKEN not set")
+        return {"status": "error", "message": "TESLAFI_API_TOKEN not set"}
     
     try:
+        print(f"[{datetime.now()}] Fetching data from TeslaFi API...")
         # TeslaFi API endpoint (adjust URL based on your actual API endpoint)
         url = f"https://www.teslafi.com/feed.php?token={TESLAFI_API_TOKEN}&command=lastGood"
-        response = requests.get(url)
+        response = requests.get(url, timeout=30)
+        
+        print(f"[{datetime.now()}] TeslaFi API response status: {response.status_code}")
         
         if response.status_code == 200:
             data = response.json()
+            print(f"[{datetime.now()}] Successfully fetched data from TeslaFi (data_id: {data.get('data_id', 'unknown')})")
             
             # Check if data_id already exists to avoid duplicates
             existing = TeslaData.query.filter_by(data_id=data.get('data_id')).first()
             if existing:
+                print(f"[{datetime.now()}] Data already exists (duplicate data_id: {data.get('data_id')})")
                 return {"status": "duplicate", "message": "Data already exists"}
             
+            print(f"[{datetime.now()}] Creating new TeslaData record...")
             # Create new record
             tesla_record = TeslaData(
                 data_id=data.get('data_id'),
@@ -750,11 +756,23 @@ def fetch_and_store_tesla_data():
             db.session.add(tesla_record)
             db.session.commit()
             
+            print(f"[{datetime.now()}] SUCCESS: Data stored successfully with data_id: {data.get('data_id')}")
             return {"status": "success", "message": "Data stored successfully", "data_id": data.get('data_id')}
         else:
+            print(f"[{datetime.now()}] ERROR: Failed to fetch data from TeslaFi API: HTTP {response.status_code}")
+            print(f"[{datetime.now()}] Response text: {response.text}")
             return {"status": "error", "message": f"Failed to fetch data: {response.status_code}"}
             
+    except requests.RequestException as e:
+        print(f"[{datetime.now()}] ERROR: Request exception when fetching TeslaFi data: {e}")
+        return {"status": "error", "message": f"Request error: {str(e)}"}
+    except json.JSONDecodeError as e:
+        print(f"[{datetime.now()}] ERROR: JSON decode error from TeslaFi API: {e}")
+        return {"status": "error", "message": f"JSON decode error: {str(e)}"}
     except Exception as e:
+        print(f"[{datetime.now()}] CRITICAL ERROR in fetch_and_store_tesla_data: {e}")
+        import traceback
+        traceback.print_exc()
         db.session.rollback()
         return {"status": "error", "message": str(e)}
 
@@ -766,23 +784,55 @@ def automatic_data_ingestion():
     """Automatically fetch and store Tesla data every 5 minutes"""
     try:
         print(f"[{datetime.now()}] Starting automatic data ingestion on Railway...")
+        
+        # Check if TESLAFI_API_TOKEN is set
+        teslafi_token = os.environ.get('TESLAFI_API_TOKEN')
+        if not teslafi_token:
+            print(f"[{datetime.now()}] ERROR: TESLAFI_API_TOKEN not set")
+            return {"status": "error", "message": "TESLAFI_API_TOKEN not set"}
+        
+        print(f"[{datetime.now()}] TeslaFi token available, fetching data...")
         result = fetch_and_store_tesla_data()
         print(f"[{datetime.now()}] Automatic data ingestion completed: {result}")
+        
+        # Log the result for debugging
+        if result.get('status') == 'success':
+            print(f"[{datetime.now()}] SUCCESS: Data ingested with data_id: {result.get('data_id')}")
+        elif result.get('status') == 'duplicate':
+            print(f"[{datetime.now()}] INFO: Data already exists (duplicate)")
+        else:
+            print(f"[{datetime.now()}] ERROR: Ingestion failed - {result}")
+        
         return result
     except Exception as e:
-        print(f"[{datetime.now()}] Automatic data ingestion failed: {e}")
+        print(f"[{datetime.now()}] CRITICAL ERROR in automatic data ingestion: {e}")
+        import traceback
+        traceback.print_exc()
         return {"status": "error", "message": str(e)}
 
-# Schedule automatic data ingestion every 5 minutes
-scheduler.add_job(
-    func=automatic_data_ingestion,
-    trigger=IntervalTrigger(minutes=5),
-    id='tesla_data_ingestion',
-    name='Fetch Tesla data every 5 minutes',
-    replace_existing=True
-)
+# Schedule automatic data ingestion every 5 minutes with better error handling
+try:
+    job = scheduler.add_job(
+        func=automatic_data_ingestion,
+        trigger=IntervalTrigger(minutes=5),
+        id='tesla_data_ingestion',
+        name='Fetch Tesla data every 5 minutes',
+        replace_existing=True,
+        max_instances=1,  # Prevent multiple instances running simultaneously
+        coalesce=True     # Combine missed runs
+    )
+    print(f"[{datetime.now()}] Automatic data ingestion scheduled successfully")
+    print(f"[{datetime.now()}] Next run scheduled for: {job.next_run_time}")
+except Exception as e:
+    print(f"[{datetime.now()}] ERROR scheduling automatic data ingestion: {e}")
 
-print("Automatic data ingestion scheduled every 5 minutes on Railway")
+# Also run once immediately on startup
+print(f"[{datetime.now()}] Running initial data ingestion...")
+try:
+    initial_result = automatic_data_ingestion()
+    print(f"[{datetime.now()}] Initial data ingestion result: {initial_result}")
+except Exception as e:
+    print(f"[{datetime.now()}] ERROR in initial data ingestion: {e}")
 
 if __name__ == '__main__':
     with app.app_context():

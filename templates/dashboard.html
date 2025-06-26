@@ -46,6 +46,9 @@
                     <button id="refreshBtn" class="px-3 py-1 text-sm bg-tesla-red text-white rounded hover:bg-red-700 transition-colors">
                         Refresh Now
                     </button>
+                    <button id="forceRefreshBtn" class="px-3 py-1 text-sm bg-tesla-dark text-white rounded hover:bg-gray-800 transition-colors">
+                        Force Refresh
+                    </button>
                 </div>
             </div>
         </div>
@@ -559,7 +562,9 @@
 
         function updateLatestData() {
             console.log('Fetching latest data...');
-            fetch('/api/data/latest')
+            // Add cache-busting parameter to prevent browser caching
+            const timestamp = new Date().getTime();
+            fetch(`/api/data/latest?t=${timestamp}`)
                 .then(response => {
                     console.log('API Response status:', response.status);
                     console.log('API Response headers:', response.headers);
@@ -804,6 +809,19 @@
         document.getElementById('refreshBtn').addEventListener('click', function() {
             updateLatestData();
             updateCharts();
+        });
+
+        document.getElementById('forceRefreshBtn').addEventListener('click', function() {
+            console.log('Force refresh triggered');
+            // Clear any cached data and force a fresh fetch
+            updateLatestData();
+            updateCharts();
+            // Also trigger a page reload if needed
+            setTimeout(() => {
+                if (confirm('Force refresh the entire page to clear all cache?')) {
+                    window.location.reload(true);
+                }
+            }, 1000);
         });
 
         document.getElementById('autoRefresh').addEventListener('change', function() {
