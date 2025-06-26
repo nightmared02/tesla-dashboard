@@ -22,6 +22,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Set secret key for CSRF protection
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 
+# Disable CSRF protection for API endpoints
+app.config['WTF_CSRF_ENABLED'] = False
+
 db = SQLAlchemy(app)
 
 # Initialize database on startup
@@ -418,7 +421,6 @@ def test_system():
 
 csrf = CSRFProtect(app)
 
-@csrf.exempt
 @app.route('/api/ingest', methods=['POST'])
 def ingest_data():
     """Handle data ingestion from both internal scheduler and external scripts"""
