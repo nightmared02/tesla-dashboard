@@ -20,6 +20,7 @@ load_dotenv()
 class TeslaDataIngester:
     def __init__(self):
         self.teslafi_token = os.environ.get('TESLAFI_API_TOKEN')
+        # Always default to Railway URL for production
         self.flask_app_url = os.environ.get('FLASK_APP_URL', 'https://tesla-dashboard-production.up.railway.app')
         self.ingestion_interval = int(os.environ.get('INGESTION_INTERVAL_MINUTES', '5'))
         

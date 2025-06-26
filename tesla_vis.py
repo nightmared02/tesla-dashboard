@@ -8,7 +8,6 @@ from sqlalchemy import desc, text
 import pytz
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from flask_wtf.csrf import CSRFProtect
 
 # Force rebuild - 2025-06-26 00:15:00
 app = Flask(__name__)
@@ -21,9 +20,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Set secret key for CSRF protection
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-
-# Disable CSRF protection for API endpoints
-app.config['WTF_CSRF_ENABLED'] = False
 
 db = SQLAlchemy(app)
 
@@ -418,8 +414,6 @@ def test_system():
             "database_connected": False,
             "timestamp": datetime.now().isoformat()
         }), 500
-
-csrf = CSRFProtect(app)
 
 @app.route('/api/ingest', methods=['POST'])
 def ingest_data():
