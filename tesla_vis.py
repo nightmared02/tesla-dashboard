@@ -681,6 +681,28 @@ def test_post():
     print(f"[{datetime.now()}] Request data: {request.get_data()}")
     return jsonify({"status": "success", "message": "POST request received"})
 
+@app.route('/api/ingest/test-scheduler', methods=['GET'])
+def test_scheduler():
+    """Test the scheduler function directly"""
+    try:
+        print(f"[{datetime.now()}] Testing scheduler function directly...")
+        result = automatic_data_ingestion()
+        return jsonify({
+            "success": True,
+            "message": "Scheduler function test completed",
+            "result": result,
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        print(f"[{datetime.now()}] ERROR in scheduler test: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
+
 def safe_float(value):
     """Safely convert value to float, return None if not possible"""
     if value is None or value == '' or value == 'null':
@@ -876,16 +898,21 @@ def scheduler_worker():
                 time.sleep(time_to_wait)
             
             # Execute data ingestion
-            print(f"[{datetime.now()}] Executing scheduled data ingestion...")
+            print(f"[{datetime.now()}] ===== EXECUTING SCHEDULED DATA INGESTION =====")
             last_run_time = datetime.now()
+            
+            # Check if TESLAFI_API_TOKEN is available
+            teslafi_token = os.environ.get('TESLAFI_API_TOKEN')
+            print(f"[{datetime.now()}] TESLAFI_API_TOKEN available: {bool(teslafi_token)}")
+            
             result = automatic_data_ingestion()
-            print(f"[{datetime.now()}] Scheduled ingestion completed: {result}")
+            print(f"[{datetime.now()}] ===== SCHEDULED INGESTION RESULT: {result} =====")
             
             # Wait a bit before calculating next run time
             time.sleep(10)
             
         except Exception as e:
-            print(f"[{datetime.now()}] ERROR in scheduler worker: {e}")
+            print(f"[{datetime.now()}] CRITICAL ERROR in scheduler worker: {e}")
             import traceback
             traceback.print_exc()
             time.sleep(60)  # Wait a minute before retrying
