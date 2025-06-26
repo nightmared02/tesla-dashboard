@@ -418,11 +418,77 @@ csrf = CSRFProtect(app)
 @csrf.exempt
 @app.route('/api/ingest', methods=['POST'])
 def ingest_data():
-    """Manually trigger data ingestion"""
+    """Handle data ingestion from both internal scheduler and external scripts"""
     try:
-        result = fetch_and_store_tesla_data()
-        return jsonify({"success": True, "message": "Data ingestion completed", "result": result})
+        # Check if data was sent in the request
+        if request.is_json and request.get_json():
+            # External script is sending data
+            data = request.get_json()
+            
+            # Check if data_id already exists to avoid duplicates
+            existing = TeslaData.query.filter_by(data_id=data.get('data_id')).first()
+            if existing:
+                return jsonify({"status": "duplicate", "message": "Data already exists"})
+            
+            # Create new record
+            tesla_record = TeslaData(
+                data_id=data.get('data_id'),
+                date=data.get('Date'),
+                state=data.get('state'),
+                battery_level=safe_float(data.get('battery_level')),
+                battery_range=safe_float(data.get('battery_range')),
+                ideal_battery_range=safe_float(data.get('ideal_battery_range')),
+                est_battery_range=safe_float(data.get('est_battery_range')),
+                usable_battery_level=safe_float(data.get('usable_battery_level')),
+                charge_limit_soc=safe_float(data.get('charge_limit_soc')),
+                charging_state=data.get('charging_state'),
+                charge_rate=safe_float(data.get('charge_rate')),
+                charger_power=safe_float(data.get('charger_power')),
+                charger_voltage=safe_float(data.get('charger_voltage')),
+                charger_actual_current=safe_float(data.get('charger_actual_current')),
+                time_to_full_charge=safe_float(data.get('time_to_full_charge')),
+                charge_energy_added=safe_float(data.get('charge_energy_added')),
+                charge_miles_added_rated=safe_float(data.get('charge_miles_added_rated')),
+                inside_temp=safe_float(data.get('inside_temp')),
+                outside_temp=safe_float(data.get('outside_temp')),
+                driver_temp_setting=safe_float(data.get('driver_temp_setting')),
+                passenger_temp_setting=safe_float(data.get('passenger_temp_setting')),
+                is_climate_on=safe_bool(data.get('is_climate_on')),
+                is_preconditioning=safe_bool(data.get('is_preconditioning')),
+                latitude=safe_float(data.get('latitude')),
+                longitude=safe_float(data.get('longitude')),
+                speed=safe_float(data.get('speed')),
+                heading=safe_float(data.get('heading')),
+                odometer=safe_float(data.get('odometer')),
+                shift_state=data.get('shift_state'),
+                locked=safe_bool(data.get('locked')),
+                sentry_mode=safe_bool(data.get('sentry_mode')),
+                valet_mode=safe_bool(data.get('valet_mode')),
+                car_version=data.get('car_version'),
+                tpms_front_left=safe_float(data.get('tpms_front_left')),
+                tpms_front_right=safe_float(data.get('tpms_front_right')),
+                tpms_rear_left=safe_float(data.get('tpms_rear_left')),
+                tpms_rear_right=safe_float(data.get('tpms_rear_right')),
+                location=data.get('location'),
+                car_state=data.get('carState'),
+                max_range=safe_float(data.get('maxRange')),
+                sleep_number=safe_int(data.get('sleepNumber')),
+                drive_number=safe_int(data.get('driveNumber')),
+                charge_number=safe_int(data.get('chargeNumber')),
+                idle_number=safe_int(data.get('idleNumber'))
+            )
+            
+            db.session.add(tesla_record)
+            db.session.commit()
+            
+            return jsonify({"status": "success", "message": "Data stored successfully", "data_id": data.get('data_id')})
+        else:
+            # Internal call - fetch data from TeslaFi
+            result = fetch_and_store_tesla_data()
+            return jsonify({"success": True, "message": "Data ingestion completed", "result": result})
+            
     except Exception as e:
+        db.session.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/ingest/manual', methods=['GET'])
