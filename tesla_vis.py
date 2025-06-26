@@ -619,6 +619,14 @@ def init_database():
             "timestamp": datetime.now().isoformat()
         }), 500
 
+@app.route('/api/test-post', methods=['POST'])
+def test_post():
+    """Test endpoint to verify POST requests work"""
+    print(f"[{datetime.now()}] Test POST endpoint called")
+    print(f"[{datetime.now()}] Request headers: {dict(request.headers)}")
+    print(f"[{datetime.now()}] Request data: {request.get_data()}")
+    return jsonify({"status": "success", "message": "POST request received"})
+
 def safe_float(value):
     """Safely convert value to float, return None if not possible"""
     if value is None or value == '' or value == 'null':
