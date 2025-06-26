@@ -15,7 +15,7 @@
         <h1 class="text-2xl font-bold mt-4 mb-2">{{ widget_name|capitalize }} Details</h1>
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Select Date/Time Range</label>
-            <input type="text" id="dateRange" class="px-4 py-2 border border-tesla-gray rounded-lg focus:ring-2 focus:ring-tesla-red focus:border-tesla-red outline-none" placeholder="Select date range...">
+            <input type="text" id="dateRange" class="px-4 py-2 border border-tesla-gray rounded-lg focus:ring-2 focus:ring-tesla-red focus:border-tesla-red outline-none w-full max-w-xl" placeholder="Select date range...">
         </div>
         <div id="options" class="mb-4"></div>
         <div class="bg-white rounded-xl shadow-lg border border-tesla-light p-6">
@@ -25,18 +25,22 @@
     <script>
         // Widget name from Flask
         const widgetName = "{{ widget_name }}";
-        // Date picker
-        let dateRange = null;
+        // Set default date range to last hour of today
+        const now = new Date();
+        const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+        let dateRange = {
+            start: oneHourAgo.toISOString().slice(0, 16),
+            end: now.toISOString().slice(0, 16)
+        };
         flatpickr("#dateRange", {
             mode: "range",
             dateFormat: "Y-m-d H:i",
             enableTime: true,
+            defaultDate: [oneHourAgo, now],
             onChange: function(selectedDates) {
                 if (selectedDates.length === 2) {
-                    dateRange = {
-                        start: selectedDates[0].toISOString().split('T')[0],
-                        end: selectedDates[1].toISOString().split('T')[0]
-                    };
+                    dateRange.start = selectedDates[0].toISOString().slice(0, 16);
+                    dateRange.end = selectedDates[1].toISOString().slice(0, 16);
                     updateWidgetChart();
                 }
             }
@@ -87,7 +91,7 @@
         renderOptions();
         // Add event listeners for options
         document.getElementById('options').addEventListener('change', updateWidgetChart);
-        // Initial chart render
+        // Initial chart render with default range
         updateWidgetChart();
     </script>
 </body>
