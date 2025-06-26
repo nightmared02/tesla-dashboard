@@ -734,102 +734,103 @@ def safe_bool(value):
 # Data ingestion script (can be run separately)
 def fetch_and_store_tesla_data():
     """Function to fetch data from TeslaFi API and store in database"""
-    # You'll need to set your TeslaFi API token as an environment variable
-    TESLAFI_API_TOKEN = os.environ.get('TESLAFI_API_TOKEN')
-    
-    if not TESLAFI_API_TOKEN:
-        print(f"[{datetime.now()}] ERROR: TESLAFI_API_TOKEN not set")
-        return {"status": "error", "message": "TESLAFI_API_TOKEN not set"}
-    
-    try:
-        print(f"[{datetime.now()}] Fetching data from TeslaFi API...")
-        # TeslaFi API endpoint (adjust URL based on your actual API endpoint)
-        url = f"https://www.teslafi.com/feed.php?token={TESLAFI_API_TOKEN}&command=lastGood"
-        response = requests.get(url, timeout=30)
+    with app.app_context():
+        # You'll need to set your TeslaFi API token as an environment variable
+        TESLAFI_API_TOKEN = os.environ.get('TESLAFI_API_TOKEN')
         
-        print(f"[{datetime.now()}] TeslaFi API response status: {response.status_code}")
+        if not TESLAFI_API_TOKEN:
+            print(f"[{datetime.now()}] ERROR: TESLAFI_API_TOKEN not set")
+            return {"status": "error", "message": "TESLAFI_API_TOKEN not set"}
         
-        if response.status_code == 200:
-            data = response.json()
-            print(f"[{datetime.now()}] Successfully fetched data from TeslaFi (data_id: {data.get('data_id', 'unknown')})")
+        try:
+            print(f"[{datetime.now()}] Fetching data from TeslaFi API...")
+            # TeslaFi API endpoint (adjust URL based on your actual API endpoint)
+            url = f"https://www.teslafi.com/feed.php?token={TESLAFI_API_TOKEN}&command=lastGood"
+            response = requests.get(url, timeout=30)
             
-            # Check if data_id already exists to avoid duplicates
-            existing = TeslaData.query.filter_by(data_id=data.get('data_id')).first()
-            if existing:
-                print(f"[{datetime.now()}] Data already exists (duplicate data_id: {data.get('data_id')})")
-                return {"status": "duplicate", "message": "Data already exists"}
+            print(f"[{datetime.now()}] TeslaFi API response status: {response.status_code}")
             
-            print(f"[{datetime.now()}] Creating new TeslaData record...")
-            # Create new record
-            tesla_record = TeslaData(
-                data_id=data.get('data_id'),
-                date=data.get('Date'),
-                state=data.get('state'),
-                battery_level=safe_float(data.get('battery_level')),
-                battery_range=safe_float(data.get('battery_range')),
-                ideal_battery_range=safe_float(data.get('ideal_battery_range')),
-                est_battery_range=safe_float(data.get('est_battery_range')),
-                usable_battery_level=safe_float(data.get('usable_battery_level')),
-                charge_limit_soc=safe_float(data.get('charge_limit_soc')),
-                charging_state=data.get('charging_state'),
-                charge_rate=safe_float(data.get('charge_rate')),
-                charger_power=safe_float(data.get('charger_power')),
-                charger_voltage=safe_float(data.get('charger_voltage')),
-                charger_actual_current=safe_float(data.get('charger_actual_current')),
-                time_to_full_charge=safe_float(data.get('time_to_full_charge')),
-                charge_energy_added=safe_float(data.get('charge_energy_added')),
-                charge_miles_added_rated=safe_float(data.get('charge_miles_added_rated')),
-                inside_temp=safe_float(data.get('inside_temp')),
-                outside_temp=safe_float(data.get('outside_temp')),
-                driver_temp_setting=safe_float(data.get('driver_temp_setting')),
-                passenger_temp_setting=safe_float(data.get('passenger_temp_setting')),
-                is_climate_on=safe_bool(data.get('is_climate_on')),
-                is_preconditioning=safe_bool(data.get('is_preconditioning')),
-                latitude=safe_float(data.get('latitude')),
-                longitude=safe_float(data.get('longitude')),
-                speed=safe_float(data.get('speed')),
-                heading=safe_float(data.get('heading')),
-                odometer=safe_float(data.get('odometer')),
-                shift_state=data.get('shift_state'),
-                locked=safe_bool(data.get('locked')),
-                sentry_mode=safe_bool(data.get('sentry_mode')),
-                valet_mode=safe_bool(data.get('valet_mode')),
-                car_version=data.get('car_version'),
-                tpms_front_left=safe_float(data.get('tpms_front_left')),
-                tpms_front_right=safe_float(data.get('tpms_front_right')),
-                tpms_rear_left=safe_float(data.get('tpms_rear_left')),
-                tpms_rear_right=safe_float(data.get('tpms_rear_right')),
-                location=data.get('location'),
-                car_state=data.get('carState'),
-                max_range=safe_float(data.get('maxRange')),
-                sleep_number=safe_int(data.get('sleepNumber')),
-                drive_number=safe_int(data.get('driveNumber')),
-                charge_number=safe_int(data.get('chargeNumber')),
-                idle_number=safe_int(data.get('idleNumber'))
-            )
-            
-            db.session.add(tesla_record)
-            db.session.commit()
-            
-            print(f"[{datetime.now()}] SUCCESS: Data stored successfully with data_id: {data.get('data_id')}")
-            return {"status": "success", "message": "Data stored successfully", "data_id": data.get('data_id')}
-        else:
-            print(f"[{datetime.now()}] ERROR: Failed to fetch data from TeslaFi API: HTTP {response.status_code}")
-            print(f"[{datetime.now()}] Response text: {response.text}")
-            return {"status": "error", "message": f"Failed to fetch data: {response.status_code}"}
-            
-    except requests.RequestException as e:
-        print(f"[{datetime.now()}] ERROR: Request exception when fetching TeslaFi data: {e}")
-        return {"status": "error", "message": f"Request error: {str(e)}"}
-    except json.JSONDecodeError as e:
-        print(f"[{datetime.now()}] ERROR: JSON decode error from TeslaFi API: {e}")
-        return {"status": "error", "message": f"JSON decode error: {str(e)}"}
-    except Exception as e:
-        print(f"[{datetime.now()}] CRITICAL ERROR in fetch_and_store_tesla_data: {e}")
-        import traceback
-        traceback.print_exc()
-        db.session.rollback()
-        return {"status": "error", "message": str(e)}
+            if response.status_code == 200:
+                data = response.json()
+                print(f"[{datetime.now()}] Successfully fetched data from TeslaFi (data_id: {data.get('data_id', 'unknown')})")
+                
+                # Check if data_id already exists to avoid duplicates
+                existing = TeslaData.query.filter_by(data_id=data.get('data_id')).first()
+                if existing:
+                    print(f"[{datetime.now()}] Data already exists (duplicate data_id: {data.get('data_id')})")
+                    return {"status": "duplicate", "message": "Data already exists"}
+                
+                print(f"[{datetime.now()}] Creating new TeslaData record...")
+                # Create new record
+                tesla_record = TeslaData(
+                    data_id=data.get('data_id'),
+                    date=data.get('Date'),
+                    state=data.get('state'),
+                    battery_level=safe_float(data.get('battery_level')),
+                    battery_range=safe_float(data.get('battery_range')),
+                    ideal_battery_range=safe_float(data.get('ideal_battery_range')),
+                    est_battery_range=safe_float(data.get('est_battery_range')),
+                    usable_battery_level=safe_float(data.get('usable_battery_level')),
+                    charge_limit_soc=safe_float(data.get('charge_limit_soc')),
+                    charging_state=data.get('charging_state'),
+                    charge_rate=safe_float(data.get('charge_rate')),
+                    charger_power=safe_float(data.get('charger_power')),
+                    charger_voltage=safe_float(data.get('charger_voltage')),
+                    charger_actual_current=safe_float(data.get('charger_actual_current')),
+                    time_to_full_charge=safe_float(data.get('time_to_full_charge')),
+                    charge_energy_added=safe_float(data.get('charge_energy_added')),
+                    charge_miles_added_rated=safe_float(data.get('charge_miles_added_rated')),
+                    inside_temp=safe_float(data.get('inside_temp')),
+                    outside_temp=safe_float(data.get('outside_temp')),
+                    driver_temp_setting=safe_float(data.get('driver_temp_setting')),
+                    passenger_temp_setting=safe_float(data.get('passenger_temp_setting')),
+                    is_climate_on=safe_bool(data.get('is_climate_on')),
+                    is_preconditioning=safe_bool(data.get('is_preconditioning')),
+                    latitude=safe_float(data.get('latitude')),
+                    longitude=safe_float(data.get('longitude')),
+                    speed=safe_float(data.get('speed')),
+                    heading=safe_float(data.get('heading')),
+                    odometer=safe_float(data.get('odometer')),
+                    shift_state=data.get('shift_state'),
+                    locked=safe_bool(data.get('locked')),
+                    sentry_mode=safe_bool(data.get('sentry_mode')),
+                    valet_mode=safe_bool(data.get('valet_mode')),
+                    car_version=data.get('car_version'),
+                    tpms_front_left=safe_float(data.get('tpms_front_left')),
+                    tpms_front_right=safe_float(data.get('tpms_front_right')),
+                    tpms_rear_left=safe_float(data.get('tpms_rear_left')),
+                    tpms_rear_right=safe_float(data.get('tpms_rear_right')),
+                    location=data.get('location'),
+                    car_state=data.get('carState'),
+                    max_range=safe_float(data.get('maxRange')),
+                    sleep_number=safe_int(data.get('sleepNumber')),
+                    drive_number=safe_int(data.get('driveNumber')),
+                    charge_number=safe_int(data.get('chargeNumber')),
+                    idle_number=safe_int(data.get('idleNumber'))
+                )
+                
+                db.session.add(tesla_record)
+                db.session.commit()
+                
+                print(f"[{datetime.now()}] SUCCESS: Data stored successfully with data_id: {data.get('data_id')}")
+                return {"status": "success", "message": "Data stored successfully", "data_id": data.get('data_id')}
+            else:
+                print(f"[{datetime.now()}] ERROR: Failed to fetch data from TeslaFi API: HTTP {response.status_code}")
+                print(f"[{datetime.now()}] Response text: {response.text}")
+                return {"status": "error", "message": f"Failed to fetch data: {response.status_code}"}
+                
+        except requests.RequestException as e:
+            print(f"[{datetime.now()}] ERROR: Request exception when fetching TeslaFi data: {e}")
+            return {"status": "error", "message": f"Request error: {str(e)}"}
+        except json.JSONDecodeError as e:
+            print(f"[{datetime.now()}] ERROR: JSON decode error from TeslaFi API: {e}")
+            return {"status": "error", "message": f"JSON decode error: {str(e)}"}
+        except Exception as e:
+            print(f"[{datetime.now()}] CRITICAL ERROR in fetch_and_store_tesla_data: {e}")
+            import traceback
+            traceback.print_exc()
+            db.session.rollback()
+            return {"status": "error", "message": str(e)}
 
 # Global variables for scheduling
 scheduler_thread = None
