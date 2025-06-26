@@ -529,16 +529,24 @@
             console.log('Fetching latest data...');
             // Add cache-busting parameter to prevent browser caching
             const timestamp = new Date().getTime();
-            fetch(`/api/data/latest?t=${timestamp}`)
+            const url = `/api/data/latest?t=${timestamp}`;
+            console.log('Fetching from URL:', url);
+            
+            fetch(url)
                 .then(response => {
                     console.log('API Response status:', response.status);
                     console.log('API Response headers:', response.headers);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
                     return response.json();
                 })
                 .then(data => {
                     console.log('API Response data:', data);
                     console.log('Data type:', typeof data);
                     console.log('Data keys:', Object.keys(data));
+                    console.log('Data has battery_level:', data && data.battery_level !== undefined);
+                    console.log('battery_level value:', data ? data.battery_level : 'no data');
                     
                     if (data && data.battery_level !== undefined) {
                         console.log('Updating widgets with data...');
@@ -598,11 +606,39 @@
                         if (document.getElementById('locationString')) document.getElementById('locationString').textContent = data.location || 'Location unavailable';
                         if (document.getElementById('lastUpdate')) document.getElementById('lastUpdate').textContent = `Last updated: ${new Date(data.timestamp).toLocaleString()}`;
                         
+                        // Usage Statistics
+                        if (document.getElementById('driveCount')) document.getElementById('driveCount').textContent = (data.drive_number !== null && data.drive_number !== undefined) ? data.drive_number : '--';
+                        if (document.getElementById('chargeCount')) document.getElementById('chargeCount').textContent = (data.charge_number !== null && data.charge_number !== undefined) ? data.charge_number : '--';
+                        if (document.getElementById('idleCount')) document.getElementById('idleCount').textContent = (data.idle_number !== null && data.idle_number !== undefined) ? data.idle_number : '--';
+                        if (document.getElementById('sleepCount')) document.getElementById('sleepCount').textContent = (data.sleep_number !== null && data.sleep_number !== undefined) ? data.sleep_number : '--';
+                        
                         // After updating all widgets, set last updated on all cards
                         const lastUpdated = data.timestamp ? new Date(data.timestamp).toLocaleString() : '--';
                         document.querySelectorAll('[id="lastUpdateAll"]').forEach(el => { el.textContent = `Last updated: ${lastUpdated}`; });
                         
                         console.log('Widgets updated successfully');
+                        console.log('Sample values updated:', {
+                            battery_level: data.battery_level,
+                            battery_range_km: data.battery_range_km,
+                            outside_temp_c: data.outside_temp_c,
+                            tpms_front_left_bar: data.tpms_front_left_bar,
+                            speed_kmh: data.speed_kmh,
+                            charging_state: data.charging_state,
+                            is_climate_on: data.is_climate_on,
+                            odometer_km: data.odometer_km,
+                            locked: data.locked,
+                            sentry_mode: data.sentry_mode,
+                            valet_mode: data.valet_mode,
+                            time_to_full_charge: data.time_to_full_charge,
+                            charge_energy_added: data.charge_energy_added,
+                            latitude: data.latitude,
+                            longitude: data.longitude,
+                            location: data.location,
+                            drive_number: data.drive_number,
+                            charge_number: data.charge_number,
+                            idle_number: data.idle_number,
+                            sleep_number: data.sleep_number
+                        });
                     } else if (data.message) {
                         console.log('No data available message:', data.message);
                         // Handle no data available message
