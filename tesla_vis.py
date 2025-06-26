@@ -19,6 +19,9 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///tesla_data.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Set secret key for CSRF protection
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+
 db = SQLAlchemy(app)
 
 # Initialize database on startup
@@ -419,17 +422,26 @@ csrf = CSRFProtect(app)
 @app.route('/api/ingest', methods=['POST'])
 def ingest_data():
     """Handle data ingestion from both internal scheduler and external scripts"""
+    print(f"[{datetime.now()}] /api/ingest endpoint called")
+    print(f"[{datetime.now()}] Request method: {request.method}")
+    print(f"[{datetime.now()}] Request headers: {dict(request.headers)}")
+    print(f"[{datetime.now()}] Request is_json: {request.is_json}")
+    
     try:
         # Check if data was sent in the request
         if request.is_json and request.get_json():
+            print(f"[{datetime.now()}] External script sending data")
             # External script is sending data
             data = request.get_json()
+            print(f"[{datetime.now()}] Received data_id: {data.get('data_id')}")
             
             # Check if data_id already exists to avoid duplicates
             existing = TeslaData.query.filter_by(data_id=data.get('data_id')).first()
             if existing:
+                print(f"[{datetime.now()}] Data already exists (duplicate)")
                 return jsonify({"status": "duplicate", "message": "Data already exists"})
             
+            print(f"[{datetime.now()}] Creating new TeslaData record")
             # Create new record
             tesla_record = TeslaData(
                 data_id=data.get('data_id'),
@@ -480,14 +492,17 @@ def ingest_data():
             
             db.session.add(tesla_record)
             db.session.commit()
+            print(f"[{datetime.now()}] Data stored successfully")
             
             return jsonify({"status": "success", "message": "Data stored successfully", "data_id": data.get('data_id')})
         else:
+            print(f"[{datetime.now()}] Internal call - fetching from TeslaFi")
             # Internal call - fetch data from TeslaFi
             result = fetch_and_store_tesla_data()
             return jsonify({"success": True, "message": "Data ingestion completed", "result": result})
             
     except Exception as e:
+        print(f"[{datetime.now()}] Error in ingest_data: {e}")
         db.session.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
 
