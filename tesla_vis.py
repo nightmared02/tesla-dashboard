@@ -185,18 +185,20 @@ def get_history_data():
 def battery_chart():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time', '00:00:00')
+    end_time = request.args.get('end_time', '23:59:59')
     
     # Default to last hour if no dates provided
     if not start_date or not end_date:
         since = datetime.now(timezone.utc) - timedelta(hours=1)
         data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
     else:
-        # Parse date strings and filter by date range
-        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
-        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        # Parse date strings and combine with time for precise filtering
+        start_dt = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(f"{end_date} {end_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
         data = TeslaData.query.filter(
             TeslaData.timestamp >= start_dt,
-            TeslaData.timestamp < end_dt
+            TeslaData.timestamp <= end_dt
         ).order_by(TeslaData.timestamp).all()
     
     if not data:
@@ -213,18 +215,20 @@ def battery_chart():
 def temperature_chart():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time', '00:00:00')
+    end_time = request.args.get('end_time', '23:59:59')
     
     # Default to last hour if no dates provided
     if not start_date or not end_date:
         since = datetime.now(timezone.utc) - timedelta(hours=1)
         data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
     else:
-        # Parse date strings and filter by date range
-        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
-        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        # Parse date strings and combine with time for precise filtering
+        start_dt = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(f"{end_date} {end_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
         data = TeslaData.query.filter(
             TeslaData.timestamp >= start_dt,
-            TeslaData.timestamp < end_dt
+            TeslaData.timestamp <= end_dt
         ).order_by(TeslaData.timestamp).all()
     
     if not data:
@@ -242,18 +246,20 @@ def temperature_chart():
 def charging_chart():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time', '00:00:00')
+    end_time = request.args.get('end_time', '23:59:59')
     
     # Default to last hour if no dates provided
     if not start_date or not end_date:
         since = datetime.now(timezone.utc) - timedelta(hours=1)
         data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
     else:
-        # Parse date strings and filter by date range
-        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
-        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        # Parse date strings and combine with time for precise filtering
+        start_dt = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(f"{end_date} {end_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
         data = TeslaData.query.filter(
             TeslaData.timestamp >= start_dt,
-            TeslaData.timestamp < end_dt
+            TeslaData.timestamp <= end_dt
         ).order_by(TeslaData.timestamp).all()
     
     if not data:
@@ -270,18 +276,20 @@ def charging_chart():
 def tire_pressure_chart():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time', '00:00:00')
+    end_time = request.args.get('end_time', '23:59:59')
     
     # Default to last hour if no dates provided
     if not start_date or not end_date:
         since = datetime.now(timezone.utc) - timedelta(hours=1)
         data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
     else:
-        # Parse date strings and filter by date range
-        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
-        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        # Parse date strings and combine with time for precise filtering
+        start_dt = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(f"{end_date} {end_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
         data = TeslaData.query.filter(
             TeslaData.timestamp >= start_dt,
-            TeslaData.timestamp < end_dt
+            TeslaData.timestamp <= end_dt
         ).order_by(TeslaData.timestamp).all()
     
     if not data:
@@ -312,18 +320,20 @@ def tire_pressure_chart():
 def usage_stats_chart():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time', '00:00:00')
+    end_time = request.args.get('end_time', '23:59:59')
     
     # Default to last hour if no dates provided
     if not start_date or not end_date:
         since = datetime.now(timezone.utc) - timedelta(hours=1)
         data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
     else:
-        # Parse date strings and filter by date range
-        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
-        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        # Parse date strings and combine with time for precise filtering
+        start_dt = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(f"{end_date} {end_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
         data = TeslaData.query.filter(
             TeslaData.timestamp >= start_dt,
-            TeslaData.timestamp < end_dt
+            TeslaData.timestamp <= end_dt
         ).order_by(TeslaData.timestamp).all()
     
     if not data:
@@ -714,15 +724,17 @@ def widget_detail(widget_name):
 def climate_chart():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time', '00:00:00')
+    end_time = request.args.get('end_time', '23:59:59')
     if not start_date or not end_date:
         since = datetime.now(timezone.utc) - timedelta(hours=1)
         data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
     else:
-        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
-        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        start_dt = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(f"{end_date} {end_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
         data = TeslaData.query.filter(
             TeslaData.timestamp >= start_dt,
-            TeslaData.timestamp < end_dt
+            TeslaData.timestamp <= end_dt
         ).order_by(TeslaData.timestamp).all()
     sofia_tz = pytz.timezone('Europe/Sofia')
     labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
@@ -733,15 +745,17 @@ def climate_chart():
 def vehicle_state_chart():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time', '00:00:00')
+    end_time = request.args.get('end_time', '23:59:59')
     if not start_date or not end_date:
         since = datetime.now(timezone.utc) - timedelta(hours=1)
         data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
     else:
-        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
-        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        start_dt = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(f"{end_date} {end_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
         data = TeslaData.query.filter(
             TeslaData.timestamp >= start_dt,
-            TeslaData.timestamp < end_dt
+            TeslaData.timestamp <= end_dt
         ).order_by(TeslaData.timestamp).all()
     sofia_tz = pytz.timezone('Europe/Sofia')
     labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
@@ -752,15 +766,17 @@ def vehicle_state_chart():
 def sentry_chart():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time', '00:00:00')
+    end_time = request.args.get('end_time', '23:59:59')
     if not start_date or not end_date:
         since = datetime.now(timezone.utc) - timedelta(hours=1)
         data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
     else:
-        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
-        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        start_dt = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(f"{end_date} {end_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
         data = TeslaData.query.filter(
             TeslaData.timestamp >= start_dt,
-            TeslaData.timestamp < end_dt
+            TeslaData.timestamp <= end_dt
         ).order_by(TeslaData.timestamp).all()
     sofia_tz = pytz.timezone('Europe/Sofia')
     labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
@@ -771,15 +787,17 @@ def sentry_chart():
 def valet_chart():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time', '00:00:00')
+    end_time = request.args.get('end_time', '23:59:59')
     if not start_date or not end_date:
         since = datetime.now(timezone.utc) - timedelta(hours=1)
         data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
     else:
-        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
-        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        start_dt = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(f"{end_date} {end_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
         data = TeslaData.query.filter(
             TeslaData.timestamp >= start_dt,
-            TeslaData.timestamp < end_dt
+            TeslaData.timestamp <= end_dt
         ).order_by(TeslaData.timestamp).all()
     sofia_tz = pytz.timezone('Europe/Sofia')
     labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
@@ -790,15 +808,17 @@ def valet_chart():
 def odometer_chart():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time', '00:00:00')
+    end_time = request.args.get('end_time', '23:59:59')
     if not start_date or not end_date:
         since = datetime.now(timezone.utc) - timedelta(hours=1)
         data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
     else:
-        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
-        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        start_dt = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(f"{end_date} {end_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
         data = TeslaData.query.filter(
             TeslaData.timestamp >= start_dt,
-            TeslaData.timestamp < end_dt
+            TeslaData.timestamp <= end_dt
         ).order_by(TeslaData.timestamp).all()
     sofia_tz = pytz.timezone('Europe/Sofia')
     labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
@@ -809,15 +829,17 @@ def odometer_chart():
 def speed_chart():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time', '00:00:00')
+    end_time = request.args.get('end_time', '23:59:59')
     if not start_date or not end_date:
         since = datetime.now(timezone.utc) - timedelta(hours=1)
         data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
     else:
-        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
-        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        start_dt = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(f"{end_date} {end_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
         data = TeslaData.query.filter(
             TeslaData.timestamp >= start_dt,
-            TeslaData.timestamp < end_dt
+            TeslaData.timestamp <= end_dt
         ).order_by(TeslaData.timestamp).all()
     sofia_tz = pytz.timezone('Europe/Sofia')
     labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
@@ -828,15 +850,17 @@ def speed_chart():
 def location_chart():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time', '00:00:00')
+    end_time = request.args.get('end_time', '23:59:59')
     if not start_date or not end_date:
         since = datetime.now(timezone.utc) - timedelta(hours=1)
         data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
     else:
-        start_dt = datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc)
-        end_dt = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) + timedelta(days=1)
+        start_dt = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(f"{end_date} {end_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
         data = TeslaData.query.filter(
             TeslaData.timestamp >= start_dt,
-            TeslaData.timestamp < end_dt
+            TeslaData.timestamp <= end_dt
         ).order_by(TeslaData.timestamp).all()
     sofia_tz = pytz.timezone('Europe/Sofia')
     labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]

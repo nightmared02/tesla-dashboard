@@ -91,14 +91,38 @@
             document.getElementById('widgetChart').style.display = 'block';
             document.getElementById('mapContainer').style.display = 'none';
             
+            // Helper function to format duration
+            function formatDuration(startTime, endTime) {
+                if (!startTime || !endTime) return 'N/A';
+                const start = new Date(startTime);
+                const end = new Date(endTime);
+                const diffMs = end - start;
+                const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+                return `${hours}h ${minutes}m ${seconds}s`;
+            }
+            
+            // Helper function to get API parameters with proper date/time
+            function getApiParams() {
+                const params = new URLSearchParams();
+                if (dateRange && dateRange.start && dateRange.end) {
+                    // Convert ISO string to proper format for backend
+                    const startDate = new Date(dateRange.start);
+                    const endDate = new Date(dateRange.end);
+                    params.append('start_date', startDate.toISOString().split('T')[0]);
+                    params.append('end_date', endDate.toISOString().split('T')[0]);
+                    // Add time parameters if needed
+                    params.append('start_time', startDate.toTimeString().split(' ')[0]);
+                    params.append('end_time', endDate.toTimeString().split(' ')[0]);
+                }
+                return params;
+            }
+            
             // Battery Level (already implemented)
             if (widgetName === 'battery') {
                 // Fetch battery data for the selected date range
-                const params = new URLSearchParams();
-                if (dateRange && dateRange.start && dateRange.end) {
-                    params.append('start_date', dateRange.start.split('T')[0]);
-                    params.append('end_date', dateRange.end.split('T')[0]);
-                }
+                const params = getApiParams();
                 fetch(`/api/charts/battery?${params.toString()}`)
                     .then(response => response.json())
                     .then(data => {
@@ -144,11 +168,7 @@
             }
             // Charging State (Disconnected=0, Connected/Charging=1)
             else if (widgetName === 'charging') {
-                const params = new URLSearchParams();
-                if (dateRange && dateRange.start && dateRange.end) {
-                    params.append('start_date', dateRange.start.split('T')[0]);
-                    params.append('end_date', dateRange.end.split('T')[0]);
-                }
+                const params = getApiParams();
                 fetch(`/api/charts/charging?${params.toString()}`)
                     .then(response => response.json())
                     .then(data => {
@@ -192,11 +212,7 @@
             }
             // Climate (OFF=0, ON=1)
             else if (widgetName === 'climate') {
-                const params = new URLSearchParams();
-                if (dateRange && dateRange.start && dateRange.end) {
-                    params.append('start_date', dateRange.start.split('T')[0]);
-                    params.append('end_date', dateRange.end.split('T')[0]);
-                }
+                const params = getApiParams();
                 fetch(`/api/charts/climate?${params.toString()}`)
                     .then(response => response.json())
                     .then(data => {
@@ -231,11 +247,7 @@
             }
             // Vehicle State (Locked=1, Unlocked=0)
             else if (widgetName === 'vehicle_state') {
-                const params = new URLSearchParams();
-                if (dateRange && dateRange.start && dateRange.end) {
-                    params.append('start_date', dateRange.start.split('T')[0]);
-                    params.append('end_date', dateRange.end.split('T')[0]);
-                }
+                const params = getApiParams();
                 fetch(`/api/charts/vehicle_state?${params.toString()}`)
                     .then(response => response.json())
                     .then(data => {
@@ -270,11 +282,7 @@
             }
             // Sentry Mode (OFF=0, ON=1)
             else if (widgetName === 'sentry') {
-                const params = new URLSearchParams();
-                if (dateRange && dateRange.start && dateRange.end) {
-                    params.append('start_date', dateRange.start.split('T')[0]);
-                    params.append('end_date', dateRange.end.split('T')[0]);
-                }
+                const params = getApiParams();
                 fetch(`/api/charts/sentry?${params.toString()}`)
                     .then(response => response.json())
                     .then(data => {
@@ -309,11 +317,7 @@
             }
             // Valet Mode (OFF=0, ON=1)
             else if (widgetName === 'valet') {
-                const params = new URLSearchParams();
-                if (dateRange && dateRange.start && dateRange.end) {
-                    params.append('start_date', dateRange.start.split('T')[0]);
-                    params.append('end_date', dateRange.end.split('T')[0]);
-                }
+                const params = getApiParams();
                 fetch(`/api/charts/valet?${params.toString()}`)
                     .then(response => response.json())
                     .then(data => {
@@ -348,11 +352,7 @@
             }
             // Odometer (km)
             else if (widgetName === 'odometer') {
-                const params = new URLSearchParams();
-                if (dateRange && dateRange.start && dateRange.end) {
-                    params.append('start_date', dateRange.start.split('T')[0]);
-                    params.append('end_date', dateRange.end.split('T')[0]);
-                }
+                const params = getApiParams();
                 fetch(`/api/charts/odometer?${params.toString()}`)
                     .then(response => response.json())
                     .then(data => {
@@ -387,11 +387,7 @@
             }
             // Speed (km/h)
             else if (widgetName === 'speed') {
-                const params = new URLSearchParams();
-                if (dateRange && dateRange.start && dateRange.end) {
-                    params.append('start_date', dateRange.start.split('T')[0]);
-                    params.append('end_date', dateRange.end.split('T')[0]);
-                }
+                const params = getApiParams();
                 fetch(`/api/charts/speed?${params.toString()}`)
                     .then(response => response.json())
                     .then(data => {
@@ -424,13 +420,163 @@
                         } else { if (widgetChart) widgetChart.destroy(); }
                     });
             }
+            // Usage Statistics (pie chart and session counts)
+            else if (widgetName === 'usage_stats') {
+                const params = getApiParams();
+                fetch(`/api/charts/usage_stats?${params.toString()}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.data && data.data.datasets && data.data.datasets[0]) {
+                            const chartData = data.data.datasets[0].data;
+                            const chartLabels = data.data.labels;
+                            if (widgetChart) widgetChart.destroy();
+                            const ctx = document.getElementById('widgetChart').getContext('2d');
+                            widgetChart = new Chart(ctx, {
+                                type: 'doughnut',
+                                data: {
+                                    labels: chartLabels,
+                                    datasets: [{
+                                        data: chartData,
+                                        backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#6B7280'],
+                                        borderColor: ['#2563EB', '#059669', '#D97706', '#4B5563'],
+                                        borderWidth: 2
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: { legend: { display: true }, tooltip: { enabled: true } }
+                                }
+                            });
+                            // Show session counts (optional: add to DOM)
+                        }
+                    });
+            }
+            // Temperature (inside/outside)
+            else if (widgetName === 'temperature') {
+                const params = getApiParams();
+                fetch(`/api/charts/temperature?${params.toString()}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const labels = data.data.labels;
+                            const options = getSelectedOptions();
+                            const datasets = [];
+                            if (options.outside) {
+                                datasets.push({
+                                    label: 'Outside Temp (°C)',
+                                    data: data.data.outside,
+                                    borderColor: '#3B82F6',
+                                    backgroundColor: '#3B82F620',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.4
+                                });
+                            }
+                            if (options.inside) {
+                                datasets.push({
+                                    label: 'Inside Temp (°C)',
+                                    data: data.data.inside,
+                                    borderColor: '#F59E0B',
+                                    backgroundColor: '#F59E0B20',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.4
+                                });
+                            }
+                            if (widgetChart) widgetChart.destroy();
+                            const ctx = document.getElementById('widgetChart').getContext('2d');
+                            widgetChart = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: labels,
+                                    datasets: datasets
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: { legend: { display: true }, tooltip: { enabled: true } },
+                                    scales: { y: { title: { display: true, text: '°C' } } }
+                                }
+                            });
+                        } else { if (widgetChart) widgetChart.destroy(); }
+                    });
+            }
+            // Tire Pressure (multi-tire)
+            else if (widgetName === 'tire_pressure') {
+                const params = getApiParams();
+                fetch(`/api/charts/tire_pressure?${params.toString()}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const labels = data.data.labels;
+                            const options = getSelectedOptions();
+                            const datasets = [];
+                            if (options.fl) {
+                                datasets.push({
+                                    label: 'Front Left',
+                                    data: data.data.front_left,
+                                    borderColor: '#3B82F6',
+                                    backgroundColor: '#3B82F620',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.4
+                                });
+                            }
+                            if (options.fr) {
+                                datasets.push({
+                                    label: 'Front Right',
+                                    data: data.data.front_right,
+                                    borderColor: '#10B981',
+                                    backgroundColor: '#10B98120',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.4
+                                });
+                            }
+                            if (options.rl) {
+                                datasets.push({
+                                    label: 'Rear Left',
+                                    data: data.data.rear_left,
+                                    borderColor: '#F59E0B',
+                                    backgroundColor: '#F59E0B20',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.4
+                                });
+                            }
+                            if (options.rr) {
+                                datasets.push({
+                                    label: 'Rear Right',
+                                    data: data.data.rear_right,
+                                    borderColor: '#EF4444',
+                                    backgroundColor: '#EF444420',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.4
+                                });
+                            }
+                            if (widgetChart) widgetChart.destroy();
+                            const ctx = document.getElementById('widgetChart').getContext('2d');
+                            widgetChart = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: labels,
+                                    datasets: datasets
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: { legend: { display: true }, tooltip: { enabled: true } },
+                                    scales: { y: { title: { display: true, text: 'bar' } } }
+                                }
+                            });
+                        } else { if (widgetChart) widgetChart.destroy(); }
+                    });
+            }
             // Location (lat/lon) - Map implementation
             else if (widgetName === 'location') {
-                const params = new URLSearchParams();
-                if (dateRange && dateRange.start && dateRange.end) {
-                    params.append('start_date', dateRange.start.split('T')[0]);
-                    params.append('end_date', dateRange.end.split('T')[0]);
-                }
+                const params = getApiParams();
                 fetch(`/api/charts/location?${params.toString()}`)
                     .then(response => response.json())
                     .then(data => {
@@ -504,8 +650,7 @@
                                         <div style="background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 12px;">
                                             <strong>Route Info</strong><br>
                                             Points: ${coordinates.length}<br>
-                                            Duration: ${data.data.labels.length > 1 ? 
-                                                new Date(data.data.labels[data.data.labels.length - 1]) - new Date(data.data.labels[0]) : 0} ms
+                                            Duration: ${formatDuration(data.data.labels[0], data.data.labels[data.data.labels.length - 1])}
                                         </div>
                                     `;
                                     return div;
@@ -529,136 +674,6 @@
                         const mapContainer = document.getElementById('mapContainer');
                         mapContainer.style.display = 'block';
                         mapContainer.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500"><div class="text-center"><p>Error loading location data</p></div></div>';
-                    });
-            }
-            // Temperature (inside/outside)
-            else if (widgetName === 'temperature') {
-                const params = new URLSearchParams();
-                if (dateRange && dateRange.start && dateRange.end) {
-                    params.append('start_date', dateRange.start.split('T')[0]);
-                    params.append('end_date', dateRange.end.split('T')[0]);
-                }
-                fetch(`/api/charts/temperature?${params.toString()}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            const labels = data.data.labels;
-                            const options = getSelectedOptions();
-                            const datasets = [];
-                            if (options.outside) {
-                                datasets.push({
-                                    label: 'Outside Temp (°C)',
-                                    data: data.data.outside,
-                                    borderColor: '#3B82F6',
-                                    backgroundColor: '#3B82F620',
-                                    borderWidth: 2,
-                                    fill: false,
-                                    tension: 0.4
-                                });
-                            }
-                            if (options.inside) {
-                                datasets.push({
-                                    label: 'Inside Temp (°C)',
-                                    data: data.data.inside,
-                                    borderColor: '#F59E0B',
-                                    backgroundColor: '#F59E0B20',
-                                    borderWidth: 2,
-                                    fill: false,
-                                    tension: 0.4
-                                });
-                            }
-                            if (widgetChart) widgetChart.destroy();
-                            const ctx = document.getElementById('widgetChart').getContext('2d');
-                            widgetChart = new Chart(ctx, {
-                                type: 'line',
-                                data: {
-                                    labels: labels,
-                                    datasets: datasets
-                                },
-                                options: {
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    plugins: { legend: { display: true }, tooltip: { enabled: true } },
-                                    scales: { y: { title: { display: true, text: '°C' } } }
-                                }
-                            });
-                        } else { if (widgetChart) widgetChart.destroy(); }
-                    });
-            }
-            // Tire Pressure (multi-tire)
-            else if (widgetName === 'tire_pressure') {
-                const params = new URLSearchParams();
-                if (dateRange && dateRange.start && dateRange.end) {
-                    params.append('start_date', dateRange.start.split('T')[0]);
-                    params.append('end_date', dateRange.end.split('T')[0]);
-                }
-                fetch(`/api/charts/tire_pressure?${params.toString()}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            const labels = data.data.labels;
-                            const options = getSelectedOptions();
-                            const datasets = [];
-                            if (options.fl) {
-                                datasets.push({
-                                    label: 'Front Left',
-                                    data: data.data.front_left,
-                                    borderColor: '#3B82F6',
-                                    backgroundColor: '#3B82F620',
-                                    borderWidth: 2,
-                                    fill: false,
-                                    tension: 0.4
-                                });
-                            }
-                            if (options.fr) {
-                                datasets.push({
-                                    label: 'Front Right',
-                                    data: data.data.front_right,
-                                    borderColor: '#10B981',
-                                    backgroundColor: '#10B98120',
-                                    borderWidth: 2,
-                                    fill: false,
-                                    tension: 0.4
-                                });
-                            }
-                            if (options.rl) {
-                                datasets.push({
-                                    label: 'Rear Left',
-                                    data: data.data.rear_left,
-                                    borderColor: '#F59E0B',
-                                    backgroundColor: '#F59E0B20',
-                                    borderWidth: 2,
-                                    fill: false,
-                                    tension: 0.4
-                                });
-                            }
-                            if (options.rr) {
-                                datasets.push({
-                                    label: 'Rear Right',
-                                    data: data.data.rear_right,
-                                    borderColor: '#EF4444',
-                                    backgroundColor: '#EF444420',
-                                    borderWidth: 2,
-                                    fill: false,
-                                    tension: 0.4
-                                });
-                            }
-                            if (widgetChart) widgetChart.destroy();
-                            const ctx = document.getElementById('widgetChart').getContext('2d');
-                            widgetChart = new Chart(ctx, {
-                                type: 'line',
-                                data: {
-                                    labels: labels,
-                                    datasets: datasets
-                                },
-                                options: {
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    plugins: { legend: { display: true }, tooltip: { enabled: true } },
-                                    scales: { y: { title: { display: true, text: 'bar' } } }
-                                }
-                            });
-                        } else { if (widgetChart) widgetChart.destroy(); }
                     });
             }
             // TODO: Add logic for temperature, tire_pressure, and other widgets
