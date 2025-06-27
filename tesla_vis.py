@@ -263,14 +263,39 @@ def charging_chart():
         ).order_by(TeslaData.timestamp).all()
     
     if not data:
-        return jsonify({'success': True, 'data': {'labels': [], 'values': []}})
+        return jsonify({'success': True, 'data': {'labels': [], 'charging_state': [], 'charge_rate': [], 'charger_power': []}})
     
     # Convert UTC timestamps to Europe/Sofia timezone
     sofia_tz = pytz.timezone('Europe/Sofia')
     labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
-    values = [d.charge_rate for d in data]
     
-    return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
+    # Charging state (0/1), charge rate (kW), and charger power (kW)
+    charging_state = []
+    charge_rate = []
+    charger_power = []
+    
+    for d in data:
+        # Convert charging state to 0/1
+        if d.charging_state and ('charging' in d.charging_state.lower() or 'connected' in d.charging_state.lower()):
+            charging_state.append(1)
+        else:
+            charging_state.append(0)
+        
+        # Use charge_rate (actual charging power in kW)
+        charge_rate.append(d.charge_rate if d.charge_rate is not None else 0)
+        
+        # Use charger_power (maximum power capability in kW)
+        charger_power.append(d.charger_power if d.charger_power is not None else 0)
+    
+    return jsonify({
+        'success': True, 
+        'data': {
+            'labels': labels, 
+            'charging_state': charging_state, 
+            'charge_rate': charge_rate,
+            'charger_power': charger_power
+        }
+    })
 
 @app.route('/api/charts/tire_pressure')
 def tire_pressure_chart():

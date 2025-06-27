@@ -196,6 +196,12 @@
                     <label class="mr-2"><input type="checkbox" id="rl" checked> Rear Left</label>
                     <label><input type="checkbox" id="rr" checked> Rear Right</label>
                 `;
+            } else if (widgetName === 'charging') {
+                optionsDiv.innerHTML = `
+                    <label class="mr-4"><input type="checkbox" id="chargingState" checked> Charging State</label>
+                    <label class="mr-4"><input type="checkbox" id="chargeRate" checked> Charge Rate (kW)</label>
+                    <label><input type="checkbox" id="chargerPower" checked> Max Power (kW)</label>
+                `;
             }
             // Add more widgets as needed
         }
@@ -211,6 +217,12 @@
                     fr: document.getElementById('fr').checked,
                     rl: document.getElementById('rl').checked,
                     rr: document.getElementById('rr').checked
+                };
+            } else if (widgetName === 'charging') {
+                return {
+                    chargingState: document.getElementById('chargingState').checked,
+                    chargeRate: document.getElementById('chargeRate').checked,
+                    chargerPower: document.getElementById('chargerPower').checked
                 };
             }
             return {};
@@ -293,7 +305,7 @@
                         }
                     });
             }
-            // Charging State (Disconnected=0, Connected/Charging=1)
+            // Charging State (Disconnected=0, Connected/Charging=1) with Power Data
             else if (widgetName === 'charging') {
                 const params = getApiParams();
                 fetch(`/api/charts/charging?${params.toString()}`)
@@ -301,37 +313,107 @@
                     .then(data => {
                         if (data.success) {
                             const labels = data.data.labels;
-                            // Convert charging state to 0/1
-                            const values = data.data.values.map(v => {
-                                if (v === null || v === undefined) return 0;
-                                if (typeof v === 'string') {
-                                    const s = v.toLowerCase();
-                                    if (s.includes('disconnected')) return 0;
-                                    if (s.includes('connected') || s.includes('charging')) return 1;
-                                }
-                                return 0;
-                            });
+                            const options = getSelectedOptions();
+                            const datasets = [];
+                            
+                            // Add charging state dataset (left axis, 0-1)
+                            if (options.chargingState) {
+                                datasets.push({
+                                    label: 'Charging State (0=Disconnected, 1=Connected/Charging)',
+                                    data: data.data.charging_state,
+                                    borderColor: '#6366F1',
+                                    backgroundColor: '#6366F120',
+                                    borderWidth: 2,
+                                    fill: true,
+                                    tension: 0.4,
+                                    yAxisID: 'y'
+                                });
+                            }
+                            
+                            // Add charge rate dataset (right axis, kW)
+                            if (options.chargeRate) {
+                                datasets.push({
+                                    label: 'Charge Rate (kW)',
+                                    data: data.data.charge_rate,
+                                    borderColor: '#10B981',
+                                    backgroundColor: '#10B98120',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.4,
+                                    yAxisID: 'y1'
+                                });
+                            }
+                            
+                            // Add charger power dataset (right axis, kW)
+                            if (options.chargerPower) {
+                                datasets.push({
+                                    label: 'Max Power Capability (kW)',
+                                    data: data.data.charger_power,
+                                    borderColor: '#F59E0B',
+                                    backgroundColor: '#F59E0B20',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.4,
+                                    yAxisID: 'y1'
+                                });
+                            }
+                            
                             if (widgetChart) widgetChart.destroy();
                             const ctx = document.getElementById('widgetChart').getContext('2d');
                             widgetChart = new Chart(ctx, {
                                 type: 'line',
                                 data: {
                                     labels: labels,
-                                    datasets: [{
-                                        label: 'Charging (0=Disconnected, 1=Connected/Charging)',
-                                        data: values,
-                                        borderColor: '#cc0000',
-                                        backgroundColor: '#cc000020',
-                                        borderWidth: 2,
-                                        fill: true,
-                                        tension: 0.4
-                                    }]
+                                    datasets: datasets
                                 },
                                 options: {
                                     responsive: true,
                                     maintainAspectRatio: false,
-                                    plugins: { legend: { display: true }, tooltip: { enabled: true } },
-                                    scales: { y: { min: 0, max: 1, ticks: { stepSize: 1 } } }
+                                    interaction: {
+                                        mode: 'index',
+                                        intersect: false,
+                                    },
+                                    plugins: { 
+                                        legend: { display: true }, 
+                                        tooltip: { enabled: true } 
+                                    },
+                                    scales: { 
+                                        y: { 
+                                            type: 'linear',
+                                            display: options.chargingState,
+                                            position: 'left',
+                                            min: 0,
+                                            max: 1,
+                                            ticks: { 
+                                                stepSize: 1,
+                                                callback: function(value) {
+                                                    return value === 0 ? 'Disconnected' : 'Connected';
+                                                }
+                                            },
+                                            title: {
+                                                display: true,
+                                                text: 'Charging State'
+                                            }
+                                        },
+                                        y1: { 
+                                            type: 'linear',
+                                            display: options.chargeRate || options.chargerPower,
+                                            position: 'right',
+                                            min: 0,
+                                            ticks: { 
+                                                callback: function(value) {
+                                                    return value + ' kW';
+                                                }
+                                            },
+                                            title: {
+                                                display: true,
+                                                text: 'Power (kW)'
+                                            },
+                                            grid: {
+                                                drawOnChartArea: false,
+                                            },
+                                        }
+                                    }
                                 }
                             });
                         } else { if (widgetChart) widgetChart.destroy(); }
