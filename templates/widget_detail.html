@@ -17,8 +17,39 @@
         <a href="/" class="text-tesla-red hover:underline">&larr; Back to Dashboard</a>
         <h1 class="text-2xl font-bold mt-4 mb-2">{{ widget_name|capitalize }} Details</h1>
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Select Date/Time Range</label>
-            <input type="text" id="dateRange" class="px-4 py-2 border border-tesla-gray rounded-lg focus:ring-2 focus:ring-tesla-red focus:border-tesla-red outline-none w-full max-w-xl" placeholder="Select date range...">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Select Date/Time Range</label>
+            
+            <!-- Quick Selection Buttons -->
+            <div class="flex flex-wrap gap-2 mb-3">
+                <button type="button" class="quick-select-btn px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-md border" data-range="15min">Last 15 min</button>
+                <button type="button" class="quick-select-btn px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-md border" data-range="1hour">Last hour</button>
+                <button type="button" class="quick-select-btn px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-md border" data-range="8hours">Last 8 hours</button>
+                <button type="button" class="quick-select-btn px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-md border" data-range="12hours">Last 12 hours</button>
+                <button type="button" class="quick-select-btn px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-md border" data-range="24hours">Last 24 hours</button>
+                <button type="button" class="quick-select-btn px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-md border" data-range="1week">Last week</button>
+                <button type="button" class="quick-select-btn px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-md border" data-range="1month">Last month</button>
+                <button type="button" class="quick-select-btn px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-md border" data-range="1year">Last year</button>
+            </div>
+            
+            <!-- Custom Date/Time Selection -->
+            <div class="flex items-center gap-3 mb-3">
+                <div class="flex-1">
+                    <label class="block text-xs text-gray-600 mb-1">Start Date/Time</label>
+                    <input type="text" id="startDate" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tesla-red focus:border-tesla-red outline-none w-full" placeholder="Select start date...">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-xs text-gray-600 mb-1">End Date/Time</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="endDate" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tesla-red focus:border-tesla-red outline-none flex-1" placeholder="Select end date...">
+                        <button type="button" id="nowBtn" class="px-3 py-2 bg-tesla-red text-white rounded-lg hover:bg-red-700 transition">Now</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Current Selection Display -->
+            <div class="text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
+                <span id="currentRange">Current range: Last hour</span>
+            </div>
         </div>
         <div id="options" class="mb-4"></div>
         <div class="bg-white rounded-xl shadow-lg border border-tesla-light p-6">
@@ -29,26 +60,124 @@
     <script>
         // Widget name from Flask
         const widgetName = "{{ widget_name }}";
-        // Set default date range to last hour of today
+        
+        // Set default date range to last hour
         const now = new Date();
         const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
         let dateRange = {
             start: oneHourAgo.toISOString().slice(0, 16),
             end: now.toISOString().slice(0, 16)
         };
-        flatpickr("#dateRange", {
-            mode: "range",
+        
+        // Initialize flatpickr for start and end date inputs
+        const startPicker = flatpickr("#startDate", {
             dateFormat: "Y-m-d H:i",
             enableTime: true,
-            defaultDate: [oneHourAgo, now],
+            defaultDate: oneHourAgo,
             onChange: function(selectedDates) {
-                if (selectedDates.length === 2) {
+                if (selectedDates.length > 0) {
                     dateRange.start = selectedDates[0].toISOString().slice(0, 16);
-                    dateRange.end = selectedDates[1].toISOString().slice(0, 16);
+                    updateCurrentRange();
                     updateWidgetChart();
                 }
             }
         });
+        
+        const endPicker = flatpickr("#endDate", {
+            dateFormat: "Y-m-d H:i",
+            enableTime: true,
+            defaultDate: now,
+            onChange: function(selectedDates) {
+                if (selectedDates.length > 0) {
+                    dateRange.end = selectedDates[0].toISOString().slice(0, 16);
+                    updateCurrentRange();
+                    updateWidgetChart();
+                }
+            }
+        });
+        
+        // Now button functionality
+        document.getElementById('nowBtn').addEventListener('click', function() {
+            const now = new Date();
+            dateRange.end = now.toISOString().slice(0, 16);
+            endPicker.setDate(now);
+            updateCurrentRange();
+            updateWidgetChart();
+        });
+        
+        // Quick selection buttons
+        document.querySelectorAll('.quick-select-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const range = this.getAttribute('data-range');
+                const now = new Date();
+                let startDate;
+                
+                switch(range) {
+                    case '15min':
+                        startDate = new Date(now.getTime() - 15 * 60 * 1000);
+                        break;
+                    case '1hour':
+                        startDate = new Date(now.getTime() - 60 * 60 * 1000);
+                        break;
+                    case '8hours':
+                        startDate = new Date(now.getTime() - 8 * 60 * 60 * 1000);
+                        break;
+                    case '12hours':
+                        startDate = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+                        break;
+                    case '24hours':
+                        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                        break;
+                    case '1week':
+                        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        break;
+                    case '1month':
+                        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                        break;
+                    case '1year':
+                        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+                        break;
+                }
+                
+                dateRange.start = startDate.toISOString().slice(0, 16);
+                dateRange.end = now.toISOString().slice(0, 16);
+                
+                startPicker.setDate(startDate);
+                endPicker.setDate(now);
+                
+                updateCurrentRange();
+                updateWidgetChart();
+                
+                // Update button styles
+                document.querySelectorAll('.quick-select-btn').forEach(b => b.classList.remove('bg-tesla-red', 'text-white'));
+                this.classList.add('bg-tesla-red', 'text-white');
+            });
+        });
+        
+        // Function to update the current range display
+        function updateCurrentRange() {
+            const start = new Date(dateRange.start);
+            const end = new Date(dateRange.end);
+            const diffMs = end - start;
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            
+            let rangeText;
+            if (diffHours > 24) {
+                const diffDays = Math.floor(diffHours / 24);
+                rangeText = `${diffDays} day${diffDays > 1 ? 's' : ''}`;
+            } else if (diffHours > 0) {
+                rangeText = `${diffHours}h ${diffMinutes}m`;
+            } else {
+                rangeText = `${diffMinutes}m`;
+            }
+            
+            document.getElementById('currentRange').textContent = `Current range: ${start.toLocaleString()} to ${end.toLocaleString()} (${rangeText})`;
+        }
+        
+        // Initialize current range display
+        updateCurrentRange();
+        
         // Chart.js setup
         let widgetChart;
         function renderOptions() {
