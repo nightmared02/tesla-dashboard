@@ -204,7 +204,7 @@
                 `;
             } else if (widgetName === 'battery_range') {
                 optionsDiv.innerHTML = `
-                    <label class="mr-4"><input type="checkbox" id="batteryRange" checked> Battery Range</label>
+                    <label class="mr-4"><input type="checkbox" id="batteryRange" checked> WLTP Range</label>
                     <label class="mr-4"><input type="checkbox" id="idealBatteryRange" checked> Ideal Range</label>
                     <label><input type="checkbox" id="estBatteryRange" checked> Estimated Range</label>
                 `;
@@ -349,7 +349,7 @@
                             // Add battery range datasets
                             if (options.batteryRange) {
                                 datasets.push({
-                                    label: 'Battery Range (km)',
+                                    label: 'WLTP Range (km)',
                                     data: data.data.battery_range,
                                     borderColor: '#cc0000',
                                     backgroundColor: '#cc000020',

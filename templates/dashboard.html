@@ -336,7 +336,7 @@
                         if (document.getElementById('batteryLevel')) document.getElementById('batteryLevel').textContent = (data.battery_level !== null && data.battery_level !== undefined) ? `${data.battery_level}%` : '--';
                         if (document.getElementById('batteryStatus')) document.getElementById('batteryStatus').textContent = data.charging_state || 'Not charging';
                         
-                        if (document.getElementById('batteryRange')) document.getElementById('batteryRange').textContent = (data.battery_range_km !== null && data.battery_range_km !== undefined) ? `${data.battery_range_km.toFixed(0)} km` : '--';
+                        if (document.getElementById('batteryRange')) document.getElementById('batteryRange').textContent = (data.est_battery_range_km !== null && data.est_battery_range_km !== undefined) ? `${data.est_battery_range_km.toFixed(0)} km` : '--';
                         if (document.getElementById('rangeStatus')) document.getElementById('rangeStatus').textContent = 'Estimated range';
                         
                         if (document.getElementById('temperature')) document.getElementById('temperature').textContent = (data.outside_temp_c !== null && data.outside_temp_c !== undefined) ? `${data.outside_temp_c.toFixed(1)}°C` : '--';
@@ -401,7 +401,7 @@
                         console.log('Widgets updated successfully');
                         console.log('Sample values updated:', {
                             battery_level: data.battery_level,
-                            battery_range_km: data.battery_range_km,
+                            battery_range_km: data.est_battery_range_km,
                             outside_temp_c: data.outside_temp_c,
                             tpms_front_left_bar: data.tpms_front_left_bar,
                             speed_kmh: data.speed_kmh,
