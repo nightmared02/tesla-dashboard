@@ -275,11 +275,23 @@ def charging_chart():
     charger_power = []
     
     for d in data:
-        # Convert charging state to 0/1
-        if d.charging_state and ('charging' in d.charging_state.lower() or 'connected' in d.charging_state.lower()):
-            charging_state.append(1)
+        # Convert charging state to 0/1 - more robust logic
+        charging_state_value = 0
+        if d.charging_state:
+            charging_state_lower = d.charging_state.lower()
+            # Check for various charging states
+            if any(state in charging_state_lower for state in ['charging', 'connected', 'complete']):
+                charging_state_value = 1
+            # Explicitly check for disconnected states
+            elif any(state in charging_state_lower for state in ['disconnected', 'stopped']):
+                charging_state_value = 0
+            else:
+                # If it's not a known charging state, default to 0
+                charging_state_value = 0
         else:
-            charging_state.append(0)
+            charging_state_value = 0
+        
+        charging_state.append(charging_state_value)
         
         # Use charge_rate (actual charging power in kW)
         charge_rate.append(d.charge_rate if d.charge_rate is not None else 0)
@@ -847,7 +859,7 @@ def odometer_chart():
         ).order_by(TeslaData.timestamp).all()
     sofia_tz = pytz.timezone('Europe/Sofia')
     labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
-    values = [d.odometer for d in data]
+    values = [miles_to_km(d.odometer) for d in data]
     return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
 
 @app.route('/api/charts/speed')
@@ -868,7 +880,7 @@ def speed_chart():
         ).order_by(TeslaData.timestamp).all()
     sofia_tz = pytz.timezone('Europe/Sofia')
     labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
-    values = [d.speed for d in data]
+    values = [mph_to_kmh(d.speed) for d in data]
     return jsonify({'success': True, 'data': {'labels': labels, 'values': values}})
 
 @app.route('/api/charts/location')
@@ -892,6 +904,96 @@ def location_chart():
     latitudes = [d.latitude for d in data]
     longitudes = [d.longitude for d in data]
     return jsonify({'success': True, 'data': {'labels': labels, 'latitudes': latitudes, 'longitudes': longitudes}})
+
+@app.route('/api/charts/battery_range')
+def battery_range_chart():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time', '00:00:00')
+    end_time = request.args.get('end_time', '23:59:59')
+    
+    # Default to last hour if no dates provided
+    if not start_date or not end_date:
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
+        data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
+    else:
+        # Parse date strings and combine with time for precise filtering
+        start_dt = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(f"{end_date} {end_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        data = TeslaData.query.filter(
+            TeslaData.timestamp >= start_dt,
+            TeslaData.timestamp <= end_dt
+        ).order_by(TeslaData.timestamp).all()
+    
+    if not data:
+        return jsonify({'success': True, 'data': {'labels': [], 'battery_range': [], 'ideal_battery_range': [], 'est_battery_range': []}})
+    
+    # Convert UTC timestamps to Europe/Sofia timezone
+    sofia_tz = pytz.timezone('Europe/Sofia')
+    labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
+    
+    # Convert battery ranges from miles to kilometers
+    battery_range = [miles_to_km(d.battery_range) for d in data]
+    ideal_battery_range = [miles_to_km(d.ideal_battery_range) for d in data]
+    est_battery_range = [miles_to_km(d.est_battery_range) for d in data]
+    
+    return jsonify({
+        'success': True, 
+        'data': {
+            'labels': labels,
+            'battery_range': battery_range,
+            'ideal_battery_range': ideal_battery_range,
+            'est_battery_range': est_battery_range
+        }
+    })
+
+@app.route('/api/charts/charging_details')
+def charging_details_chart():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    start_time = request.args.get('start_time', '00:00:00')
+    end_time = request.args.get('end_time', '23:59:59')
+    
+    # Default to last hour if no dates provided
+    if not start_date or not end_date:
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
+        data = TeslaData.query.filter(TeslaData.timestamp >= since).order_by(TeslaData.timestamp).all()
+    else:
+        # Parse date strings and combine with time for precise filtering
+        start_dt = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        end_dt = datetime.strptime(f"{end_date} {end_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+        data = TeslaData.query.filter(
+            TeslaData.timestamp >= start_dt,
+            TeslaData.timestamp <= end_dt
+        ).order_by(TeslaData.timestamp).all()
+    
+    if not data:
+        return jsonify({'success': True, 'data': {'labels': [], 'charge_rate': [], 'charger_power': [], 'charger_voltage': [], 'charger_current': [], 'time_to_full': [], 'energy_added': []}})
+    
+    # Convert UTC timestamps to Europe/Sofia timezone
+    sofia_tz = pytz.timezone('Europe/Sofia')
+    labels = [d.timestamp.replace(tzinfo=timezone.utc).astimezone(sofia_tz).strftime('%Y-%m-%d %H:%M') for d in data]
+    
+    # Extract charging details
+    charge_rate = [d.charge_rate if d.charge_rate is not None else 0 for d in data]
+    charger_power = [d.charger_power if d.charger_power is not None else 0 for d in data]
+    charger_voltage = [d.charger_voltage if d.charger_voltage is not None else 0 for d in data]
+    charger_current = [d.charger_actual_current if d.charger_actual_current is not None else 0 for d in data]
+    time_to_full = [d.time_to_full_charge if d.time_to_full_charge is not None else 0 for d in data]
+    energy_added = [d.charge_energy_added if d.charge_energy_added is not None else 0 for d in data]
+    
+    return jsonify({
+        'success': True, 
+        'data': {
+            'labels': labels,
+            'charge_rate': charge_rate,
+            'charger_power': charger_power,
+            'charger_voltage': charger_voltage,
+            'charger_current': charger_current,
+            'time_to_full': time_to_full,
+            'energy_added': energy_added
+        }
+    })
 
 def safe_float(value):
     """Safely convert value to float, return None if not possible"""

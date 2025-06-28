@@ -202,6 +202,21 @@
                     <label class="mr-4"><input type="checkbox" id="chargeRate" checked> Charge Rate (kW)</label>
                     <label><input type="checkbox" id="chargerPower" checked> Max Power (kW)</label>
                 `;
+            } else if (widgetName === 'battery_range') {
+                optionsDiv.innerHTML = `
+                    <label class="mr-4"><input type="checkbox" id="batteryRange" checked> Battery Range</label>
+                    <label class="mr-4"><input type="checkbox" id="idealBatteryRange" checked> Ideal Range</label>
+                    <label><input type="checkbox" id="estBatteryRange" checked> Estimated Range</label>
+                `;
+            } else if (widgetName === 'charging_details') {
+                optionsDiv.innerHTML = `
+                    <label class="mr-4"><input type="checkbox" id="chargeRate" checked> Charge Rate (kW)</label>
+                    <label class="mr-4"><input type="checkbox" id="chargerPower" checked> Max Power (kW)</label>
+                    <label class="mr-4"><input type="checkbox" id="chargerVoltage" checked> Voltage (V)</label>
+                    <label class="mr-4"><input type="checkbox" id="chargerCurrent" checked> Current (A)</label>
+                    <label class="mr-4"><input type="checkbox" id="timeToFull" checked> Time to Full (min)</label>
+                    <label><input type="checkbox" id="energyAdded" checked> Energy Added (kWh)</label>
+                `;
             }
             // Add more widgets as needed
         }
@@ -223,6 +238,21 @@
                     chargingState: document.getElementById('chargingState').checked,
                     chargeRate: document.getElementById('chargeRate').checked,
                     chargerPower: document.getElementById('chargerPower').checked
+                };
+            } else if (widgetName === 'battery_range') {
+                return {
+                    batteryRange: document.getElementById('batteryRange').checked,
+                    idealBatteryRange: document.getElementById('idealBatteryRange').checked,
+                    estBatteryRange: document.getElementById('estBatteryRange').checked
+                };
+            } else if (widgetName === 'charging_details') {
+                return {
+                    chargeRate: document.getElementById('chargeRate').checked,
+                    chargerPower: document.getElementById('chargerPower').checked,
+                    chargerVoltage: document.getElementById('chargerVoltage').checked,
+                    chargerCurrent: document.getElementById('chargerCurrent').checked,
+                    timeToFull: document.getElementById('timeToFull').checked,
+                    energyAdded: document.getElementById('energyAdded').checked
                 };
             }
             return {};
@@ -296,6 +326,232 @@
                                     scales: {
                                         y: {
                                             ticks: { callback: v => v + '%' }
+                                        }
+                                    }
+                                }
+                            });
+                        } else {
+                            if (widgetChart) widgetChart.destroy();
+                        }
+                    });
+            }
+            // Battery Range (new implementation)
+            else if (widgetName === 'battery_range') {
+                const params = getApiParams();
+                fetch(`/api/charts/battery_range?${params.toString()}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const labels = data.data.labels;
+                            const options = getSelectedOptions();
+                            const datasets = [];
+                            
+                            // Add battery range datasets
+                            if (options.batteryRange) {
+                                datasets.push({
+                                    label: 'Battery Range (km)',
+                                    data: data.data.battery_range,
+                                    borderColor: '#cc0000',
+                                    backgroundColor: '#cc000020',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.4
+                                });
+                            }
+                            
+                            if (options.idealBatteryRange) {
+                                datasets.push({
+                                    label: 'Ideal Battery Range (km)',
+                                    data: data.data.ideal_battery_range,
+                                    borderColor: '#10B981',
+                                    backgroundColor: '#10B98120',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.4
+                                });
+                            }
+                            
+                            if (options.estBatteryRange) {
+                                datasets.push({
+                                    label: 'Estimated Battery Range (km)',
+                                    data: data.data.est_battery_range,
+                                    borderColor: '#F59E0B',
+                                    backgroundColor: '#F59E0B20',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.4
+                                });
+                            }
+                            
+                            if (widgetChart) widgetChart.destroy();
+                            const ctx = document.getElementById('widgetChart').getContext('2d');
+                            widgetChart = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: labels,
+                                    datasets: datasets
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: true },
+                                        tooltip: { enabled: true }
+                                    },
+                                    scales: {
+                                        y: {
+                                            ticks: { callback: v => v + ' km' }
+                                        }
+                                    }
+                                }
+                            });
+                        } else {
+                            if (widgetChart) widgetChart.destroy();
+                        }
+                    });
+            }
+            // Charging Details (new implementation)
+            else if (widgetName === 'charging_details') {
+                const params = getApiParams();
+                fetch(`/api/charts/charging_details?${params.toString()}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const labels = data.data.labels;
+                            const options = getSelectedOptions();
+                            const datasets = [];
+                            
+                            // Add charging details datasets
+                            if (options.chargeRate) {
+                                datasets.push({
+                                    label: 'Charge Rate (kW)',
+                                    data: data.data.charge_rate,
+                                    borderColor: '#10B981',
+                                    backgroundColor: '#10B98120',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.4,
+                                    yAxisID: 'y'
+                                });
+                            }
+                            
+                            if (options.chargerPower) {
+                                datasets.push({
+                                    label: 'Max Power (kW)',
+                                    data: data.data.charger_power,
+                                    borderColor: '#F59E0B',
+                                    backgroundColor: '#F59E0B20',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.4,
+                                    yAxisID: 'y'
+                                });
+                            }
+                            
+                            if (options.chargerVoltage) {
+                                datasets.push({
+                                    label: 'Voltage (V)',
+                                    data: data.data.charger_voltage,
+                                    borderColor: '#6366F1',
+                                    backgroundColor: '#6366F120',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.4,
+                                    yAxisID: 'y1'
+                                });
+                            }
+                            
+                            if (options.chargerCurrent) {
+                                datasets.push({
+                                    label: 'Current (A)',
+                                    data: data.data.charger_current,
+                                    borderColor: '#EF4444',
+                                    backgroundColor: '#EF444420',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.4,
+                                    yAxisID: 'y1'
+                                });
+                            }
+                            
+                            if (options.timeToFull) {
+                                datasets.push({
+                                    label: 'Time to Full (min)',
+                                    data: data.data.time_to_full,
+                                    borderColor: '#8B5CF6',
+                                    backgroundColor: '#8B5CF620',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.4,
+                                    yAxisID: 'y2'
+                                });
+                            }
+                            
+                            if (options.energyAdded) {
+                                datasets.push({
+                                    label: 'Energy Added (kWh)',
+                                    data: data.data.energy_added,
+                                    borderColor: '#06B6D4',
+                                    backgroundColor: '#06B6D420',
+                                    borderWidth: 2,
+                                    fill: false,
+                                    tension: 0.4,
+                                    yAxisID: 'y'
+                                });
+                            }
+                            
+                            if (widgetChart) widgetChart.destroy();
+                            const ctx = document.getElementById('widgetChart').getContext('2d');
+                            widgetChart = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: labels,
+                                    datasets: datasets
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    interaction: {
+                                        mode: 'index',
+                                        intersect: false,
+                                    },
+                                    plugins: { 
+                                        legend: { display: true }, 
+                                        tooltip: { enabled: true } 
+                                    },
+                                    scales: { 
+                                        y: { 
+                                            type: 'linear',
+                                            display: true,
+                                            position: 'left',
+                                            title: {
+                                                display: true,
+                                                text: 'Power (kW) / Energy (kWh)'
+                                            }
+                                        },
+                                        y1: { 
+                                            type: 'linear',
+                                            display: true,
+                                            position: 'right',
+                                            title: {
+                                                display: true,
+                                                text: 'Voltage (V) / Current (A)'
+                                            },
+                                            grid: {
+                                                drawOnChartArea: false,
+                                            },
+                                        },
+                                        y2: { 
+                                            type: 'linear',
+                                            display: true,
+                                            position: 'right',
+                                            title: {
+                                                display: true,
+                                                text: 'Time (min)'
+                                            },
+                                            grid: {
+                                                drawOnChartArea: false,
+                                            },
                                         }
                                     }
                                 }
